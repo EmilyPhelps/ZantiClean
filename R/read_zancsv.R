@@ -13,6 +13,9 @@ read_zancsv <- function(file, ID){
   lines <- readLines(file)
   start_line <- which(grepl("TIME", lines))[1]
   data <- read.csv(file, skip = start_line - 1)
+  data <- data[-nrow(data), ] %>%
+            mutate_all(as.numeric) %>%
+            mutate(file=paste0(file))
 
   if(missing(ID)){
     ID <- FALSE
