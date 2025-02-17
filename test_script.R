@@ -29,7 +29,11 @@ Y <- data %>%
 left_join(X, Y)
 
 csv <- read_zancsv("data/cherryshrimp2024/csv/LightDarktestCS_final-20241104T155414.csv") %>%
-  dplyr::rename(A3_Z4_T=A3_Z2_T.1) %>% transform_zan(., ID=FALSE) %>% mutate(RUNTIME=round(TIME, 2))
+  dplyr::rename(A3_Z4_T=A3_Z2_T.1)
+
+%>%
+  transform_zan(., ID=FALSE)
 file <- "LightDarktestCS_final-20241104T155414-XY_data.csv"
 xy <- read_zancoord("data/cherryshrimp2024/coord.csv/", file = file) %>% transform_xy(.)
 xy %>% filter(RUNTIME >=50) %>% mutate(RUNTIME=round(RUNTIME, 2)) %>% left_join(., csv)
+

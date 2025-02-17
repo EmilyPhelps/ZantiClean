@@ -61,5 +61,5 @@ transform_xy <- function(data){
 
   output<- left_join(X, Y)
   return(output)
-
 }
+
