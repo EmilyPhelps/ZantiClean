@@ -1,12 +1,12 @@
-## Functions for reading zanticks files into R.
+## Functions for reading zantiks files into R.
 #' read_zancsv()
 #'
-#' This function loads in a single .csv file output from Zanticks.
+#' This function loads in a single .csv file output from Zantiks.
 #' It identifies the header line and only reads in from there
 #' skipping the preamble.
 #'
 #' @param file Path to the file to be imported
-#' @param ID a locgical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
 #' @return A dataframe containing the csv data
 #' @export
 read_zancsv <- function(file, ID){

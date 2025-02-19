@@ -6,8 +6,8 @@
 #' overall velocity, track length, freezings (calculated as no
 #' movement for three seconds)
 #'
-#' @param data Path to the file to be imported
-#' @param ID a locgical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param data Zanticks transformed csv
+#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
 #' @return A dataframe containing summary behavioural variables
 #' @export
 summary_behaviour <- function(data, ID){
@@ -67,3 +67,13 @@ summary_behaviour <- function(data, ID){
  return(output)
  }
 }
+#' split_behaviour()
+#'
+#' This function estimates the behaviour variables accounting
+#' for differences in assay that can be divided by time. E.g.
+#' light for the first X seconds, dark for next X seconds.
+#'
+#' @param data Zanticks transformed csv.
+#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
+#' @return A dataframe containing summary behavioural variables
+#' @export

@@ -7,7 +7,7 @@
 summary_behaviour(data, ID)
 }
 \arguments{
-\item{data}{Path to the file to be imported}
+\item{data}{Zanticks transformed csv}
 
 \item{ID}{a locgical vector. If true, an ID will be assigned from the Service part of the file.}
 }
