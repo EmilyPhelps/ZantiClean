@@ -13,17 +13,16 @@
 summary_behaviour <- function(data, ID){
  if(missing(ID)){
     ID <- FALSE
-  }
+ }
 
  if (ID == TRUE) {
-   time <- max(data$TIME_BIN)
-
    dis.traits <- data %>%
      filter(type == "D") %>%
+     group_by(file.timestamp, arena, ID) %>%
      mutate(freezing_event = ifelse(total_distance == 0 &
                                       lag(total_distance, default = NA) == 0 &
-                                      lead(total_distance, default = NA) == 0, 1, 0)) %>%
-     group_by(file.timestamp, arena, ID) %>%
+                                      lead(total_distance, default = NA) == 0, 1, 0),
+            time=max(TIME_BIN)) %>%
      summarise(track_length=sum(total_distance),
                velocity= sum(total_distance)/time,
                freezing=sum(freezing_event)) %>%
@@ -45,10 +44,11 @@ summary_behaviour <- function(data, ID){
 
  dis.traits <- data %>%
     filter(type == "D") %>%
+    group_by(file.timestamp, arena) %>%
     mutate(freezing_event = ifelse(total_distance == 0 &
                                      lag(total_distance, default = NA) == 0 &
-                                     lead(total_distance, default = NA) == 0, 1, 0)) %>%
-    group_by(file.timestamp, arena) %>%
+                                     lead(total_distance, default = NA) == 0, 1, 0),
+           time=max(TIME_BIN)) %>%
     summarise(track_length=sum(total_distance),
               velocity= sum(total_distance)/time,
               freezing=sum(freezing_event)) %>%
@@ -74,6 +74,26 @@ summary_behaviour <- function(data, ID){
 #' light for the first X seconds, dark for next X seconds.
 #'
 #' @param data Zanticks transformed csv.
-#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
-#' @return A dataframe containing summary behavioural variables
+#' @param time Time in seconds, in which to divide data by.
+#' @return A dataframe containing summary behavioral variables
 #' @export
+split_behaviour <- function(data, time){
+  pre <- csv %>%
+    filter(TIME_BIN<=time) %>%
+    summary_behaviour() %>%
+    mutate(timesplit=paste0("pre", time)) %>%
+    rename_with(~paste0("pre", time, .),
+                c(track_length, velocity, freezing,
+                  time_Z1, time_Z2, time_Z3, time_Z4))
+
+  post <- csv %>%
+    filter(TIME_BIN>=time) %>%
+    summary_behaviour() %>%
+    mutate(timesplit=paste0("post", time)) %>%
+    rename_with(~paste0("post", time, .),
+                c(track_length, velocity, freezing,
+                  time_Z1, time_Z2, time_Z3, time_Z4))
+
+  output <- left_join(pre, post)
+  return(output)
+}

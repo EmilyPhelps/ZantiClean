@@ -9,7 +9,7 @@ summary_behaviour(data, ID)
 \arguments{
 \item{data}{Zanticks transformed csv}
 
-\item{ID}{a locgical vector. If true, an ID will be assigned from the Service part of the file.}
+\item{ID}{a logical vector. If true, an ID will be assigned from the Service part of the file.}
 }
 \value{
 A dataframe containing summary behavioural variables
