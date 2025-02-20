@@ -1,0 +1,138 @@
+# ZantiClean
+
+## Overview
+
+This is the official GitHub repository for the package `ZantiClean`.
+This package was designed to clean and transform behavioral data from
+collected using [Zantiks LT](https://zantiks.com/products/zantiks-lt).
+
+By making this package public, we hope to enable researchers with
+limited data wrangling experience to make meaningful and important
+biological inferences. The predecessor to the Zantiks system calculated
+biological variables such as freezings, track length and velocity etc.
+automatically, making it somewhat more user friendly. This package is an
+effort to bridge this gap.
+
+## Installation
+
+This package requires installation from github. This requires devtools.
+
+``` r
+#Check if devtools is installed, if not install it
+if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+
+
+#Install and load ZantiClean
+devtools::install_github("EmilyPhelps/ZantiClean")
+library(ZantiClean)
+```
+
+## Getting Started
+
+The first function we will use is to read in Zantiks files. The files
+have varying numbers of lines containing preamble before the actual data
+starts. We want to pull out some key information from this preamble and
+then read the data.
+
+An example of important information is the line saying
+<a href="Service:SomeInformation"
+class="uri"><em>Service:SomeInformation</em></a>. This can be changed in
+the Zantiks code so that the *SomeInformation* can be an allocated ID.
+If you have not done this you can run `read_zancsv()` without it.
+
+``` r
+#If you have no ID 
+csv <- read_zancsv("path/to/your/zantiks.csv")
+
+#If you have an ID in the Service line
+csv <- read_zancsv("path/to/your/zantiks.csv", ID=TRUE)
+```
+
+Often you wont have just one file to read in. In this case you can use
+`read_manyzancsv()`. Here you must use an ID since to help identify each
+individual.
+
+``` r
+csvs <- read_manyzancsv("path/to/directory/containing/csvs/")
+```
+
+Next we need to transform the data so that each line represents a single
+individual. Again you can include an ID or not.
+
+``` r
+trans <- transform_csv(csvs, ID=TRUE)
+```
+
+Now we want to get some behavioural information from our data. To do
+this we can use the `summary_behaviour()` function
+
+``` r
+data <- summary_behaviour(trans)
+```
+
+This will add:
+
+- **Track Length:** Total distance covered in all zones.
+
+- **Velocity:** The average speed.
+
+- **Freezing:** The number times the organism was stationary for 3
+  seconds or more.
+
+- **Time in Zones:** The time spent in each zone.
+
+However, sometimes you want to look at pre and post a stimulus or change
+in environment. E.g. if turned the lights off after 240 seconds.To get
+these estimates for before and after an event we can do
+
+``` r
+split_behaviour(data=trans,time = 240)
+```
+
+## Looking at XY data
+
+Sometimes we need a quick look the overall movement of the individual.
+To do this we can read in our XY coordinates.
+
+``` r
+XY <- read_zancoord("directory/containing/coordinates", "coordinatefileXY.csv")
+```
+
+This needs to then be transformed and filtered so we only have one
+individual (one arena) present.
+
+``` r
+A1 <- transform_xy(XY) %>% 
+              filter(arena == "A1")
+```
+
+Before we plot our individuals path, we need to get the coordinates of
+the zones our arena was split into. This should be stored as a dataframe
+containing the columns “zone”, “xmin”, “xmax”, “ymax”, “ymin” and
+“colour”.
+
+``` r
+track_plot(XY=A1, zones=zonedata)
+```
+
+Here’s one I made earlier:
+<center>
+<img src="images/plot_test.png" style="width:50.0%" />
+</center>
+
+This code is pretty flexible because under the hood its just ggplot. So
+you can add titles, change the theme and colour if you want to use the
+raw code.
+
+``` r
+  ggplot() + 
+    geom_rect(data=zones, aes(xmin=xmin, xmax=xmax,
+                              ymin=ymin, ymax=ymax, fill=colour))+
+    geom_path(data=XY, aes(x=X, y=Y), colour="#141F52", alpha=0.5) +
+    scale_fill_manual(values=c("#E1DFD0", "#F5F4EF")) +
+    scale_x_continuous(expand=c(0,0)) +
+    scale_y_continuous(expand=c(0,0)) +
+    theme_void()+
+    theme(legend.position = "none",
+          panel.border = element_rect(colour = "#333333", fill=NA, linewidth=1))
+```

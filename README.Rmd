@@ -2,12 +2,15 @@
 title: "ZantiClean"
 author: "Emily Phelps"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
+output:
+  md_document:
+    variant: gfm
+vignette: |
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
