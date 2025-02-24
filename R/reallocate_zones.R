@@ -19,6 +19,7 @@ is_point_in_zone <- function(x, y, xmin, xmax, ymin, ymax) {
 #' @param zones A dataframe with the number of zones and the coordinates of the zones.
 #'              e.g. zone, xmin, xmax, ymin, ymax
 #'              Zone name must have a Z in it. e.g. Z1, Z2, Z3 or Z_inner, Z_outer
+#'              Also the zones cannot overlap. Make them 0.1 apart at least.
 #' @param arena A dataframe with the coordinates of the arenas.
 #'              e.g. arena, xmin, xmax, ymin, ymax
 #' @param start The start time of the assay, after acclimatization (in seconds)
@@ -33,30 +34,31 @@ allocate_zones <- function(XY, zones, arena, start, end, file, nested){
     nested <- FALSE
   }
 
-  if(missing(ID)){
+  if(missing(file)){
     file <- NA
   }
-
-  rel.xy <- left_join(xy, arena.df) %>%
+  rel.xy <- left_join(xy, arena) %>%
                 mutate(rel.X=X-xmin, rel.Y=Y-ymin)
 
   if(nested == FALSE){
     zoned.xy <- rel.xy %>%
       rowwise() %>%
-      mutate(Zone={matching_zone <- zone.df %>%
+      mutate(Zone={matching_zone <- zones %>%
         filter(rel.X >= xmin & rel.X <= xmax & rel.Y >=ymin & rel.Y<= ymax) %>%
         pull(Zone)  # Extract the matching zone
 
       if(length(matching_zone) > 0) matching_zone else NA_character_
-      }) %>%  filter(!is.na(Zone))}
+      }) %>%
+        filter(!is.na(Zone))
+    }
   else {
-    inner <- zone.df %>% filter(Zone =="Z_inner")
-    outer <- zone.df %>% filter(Zone == "Z_outer")
+    inner <- zones %>% filter(Zone =="Z_inner")
+    outer <- zones %>% filter(Zone == "Z_outer")
 
     zoned.xy <- rel.xy %>% rowwise() %>%
-      mutate(zone = case_when(
-        is_point_in_rectangle(rel.X, rel.Y, inner$xmin, inner$xmax, inner$ymin, inner$ymax) ~ "Z_inner",
-        is_point_in_rectangle(rel.X, rel.Y, outer$xmin, outer$xmax, outer$ymin, outer$ymax) ~ "Z_outer",
+      mutate(Zone = case_when(
+        is_point_in_zone(rel.X, rel.Y, inner$xmin, inner$xmax, inner$ymin, inner$ymax) ~ "Z_inner",
+        is_point_in_zone(rel.X, rel.Y, outer$xmin, outer$xmax, outer$ymin, outer$ymax) ~ "Z_outer",
         TRUE ~ "none"
       ))
   }

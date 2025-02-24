@@ -7,7 +7,7 @@
 summary_behaviour(data, ID)
 }
 \arguments{
-\item{data}{Zanticks transformed csv}
+\item{data}{Zantiks transformed csv}
 
 \item{ID}{a logical vector. If true, an ID will be assigned from the Service part of the file.}
 }
@@ -16,7 +16,7 @@ A dataframe containing summary behavioural variables
 }
 \description{
 This function estimates the summary behaviour data from the
-zanticks csv. The variables included are time in each zone,
+zantiks csv. The variables included are time in each zone,
 overall velocity, track length, freezings (calculated as no
 movement for three seconds)
 }
