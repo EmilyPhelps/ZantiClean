@@ -29,6 +29,8 @@ This is the official GitHub repository for the package `ZantiClean`. This packag
 
 By making this package public, we hope to enable researchers with limited data wrangling experience to make meaningful and important biological inferences. The predecessor to the Zantiks system calculated biological variables such as freezings, track length and velocity etc. automatically, making it somewhat more user friendly. This package is an effort to bridge this gap.
 
+This software is still very much under development. If you notice any bugs, have comments/queries or want additional functions that could be widely applicable please do get in touch by opening a github issue or emailing e.c.phelps@exeter.ac.uk.
+
 ## Installation
 
 This package requires installation from github. This requires devtools.
@@ -127,4 +129,83 @@ This code is pretty flexible because under the hood its just ggplot. So you can 
     theme_void()+
     theme(legend.position = "none",
           panel.border = element_rect(colour = "#333333", fill=NA, linewidth=1))
+```
+
+## Changed your mind about experimental design?
+
+Obviously its not ideal to change what you want to look at after the experiment but the XY coordinates measure of Zantiks allows for this. The `allocate_zones()` function is written to allocate points to zones and create a Zantiks .csv style dataframe from this data. This is not for use in studies where Zones have built in differences e.g. tests of scototaxis. However, there might be some use cases, e.g. looking for finer scale inferences within exisitng zones, or changing zone size in open field trials.
+
+We first start by reading in a single coord file.
+```{r}
+XY <- read_zancoord("directory/containing/coordinates", "coordinatefileXY.csv")
+```
+
+We then need to create a dataframe with our arena size. This will vary depending on how many arenas you have per trial. For example, if we have four arenas, the arenas might be 360 x 67.5 mm. You need to also take into account divider size!
+
+*Note: In a perfect world Zantiks tank size is standardised, but tank size can vary. Make sure you account for this in arena size*
+
+You can create this dataframe however you like but it must have the columns below. Arenas should be named "A1" etc to match the Zantiks XY file 
+```{r}
+arena <- paste0("A", seq(1,4))
+xmin  <- c(0, 0, 0, 0)
+xmax <- c(360, 360, 360, 360)
+ymin <- c(0, 67.5, 135, 202.5)
+ymax <- c(67.5, 135, 202.5, 270)
+
+arena.df <- tibble(arena, xmin, xmax, ymin, ymax)
+```
+
+Now we need to create a dataframe delimiting the zoens we want. Each arena gets standardised so we only need to list the zones once and they will be created within each arena. You can allocate any number of zones to your arena, but the more zones the slower it will run!
+```{r}
+# An example of 2 zones side by side
+Zone <-c("Z1", "Z2")
+xmin <- c(0, 0)
+xmax <- c(360, 360)
+ymin <- c(0, 34.1)
+ymax <- c(34, 68)
+zone.df <- tibble(Zone, xmin, xmax, ymin, ymax)
+
+#Then the script to allocate zones. 
+allocate_zones(XY=XY, zones = zone.df, arena = arena.df, start= 50, end=480)
+```
+
+The start time above indicates the time after calibration and after acclimatization. The end time indicates the upper time limit for the assay. 
+
+The `allocate_zones()` function can also account for nested designs where zone is within the other. Here you can only allocate two zones, inner and outer.
+```{r}
+Zone<- c("Z_inner", "Z_outer")
+xmin <- c(100, 0)
+xmax <- c(250, 360)
+ymin <- c(20, 0)
+ymax <- c(35, 68)
+
+zone.df <- tibble(Zone, xmin, xmax, ymin, ymax)
+
+allocate_zones(XY=xy, zones = zone.df, arena=arena.df, start=50, end=480, file = "test", nested=TRUE)
+```
+
+I have only gone through an example with one file here. If you wanted to scale this up to apply to all your files you could use lapply()
+```{r}
+dir <- "path/to/directory"
+
+files <- list.files(dir)
+
+xy_list <- lapply(files, function(file) read_zancoord(dir, file)) # Read in XY data as a list
+
+names(xy_list) <- files # Names each XY coordinate by the name of the file it came from 
+
+lapply(seq_along(xy_list), function(i) {
+  # Get the file name using the index 'i'
+  file_name <- names(xy_list)[i]
+  
+  # Call allocate_zones() with file_name as the 'file' argument
+  allocate_zones(XY = xy_list[[i]], 
+                 zones = zone.df, 
+                 arena = arena.df, 
+                 start = 50, 
+                 end = 480, 
+                 file = file_name)
+})
+
+
 ```
