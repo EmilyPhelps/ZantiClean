@@ -7,7 +7,7 @@
 split_behaviour(data, time)
 }
 \arguments{
-\item{data}{Zanticks transformed csv.}
+\item{data}{zantiks transformed csv.}
 
 \item{time}{Time in seconds, in which to divide data by.}
 }

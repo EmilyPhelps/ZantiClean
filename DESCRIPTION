@@ -12,4 +12,5 @@ Imports:
 	tidyverse,
 	lubridate,
 	reshape,
-	stringr
+	stringr,
+	sf
