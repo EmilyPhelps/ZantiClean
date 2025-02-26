@@ -34,7 +34,8 @@ read_zancsv <- function(file, ID){
   return(data)
 
 }
-#' read_
+#' read_manyzancsv()
+#' 
 #' This function loads in all Zanticks output .csv files stored in a single directory.
 #' It identifies the header line and only reads in from there
 #' skipping the preamble.
