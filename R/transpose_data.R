@@ -20,7 +20,7 @@ transform_csv <- function(data, ID){
       mutate(arena=substr(variable, 1, 2),
              zone=substr(variable, 4, 5),
              type=substr(variable, 7,7)) %>%
-      dplyr::select(TIME, TIME_BIN, arena, zone, type, value, file.timestamp, file.date, file, ID) %>%
+      dplyr::select(TIME, TIME_BIN, arena, zone, type, value, file.timestamp, file.date, file, ID, Z_unit) %>%
       distinct() %>%
       pivot_wider(names_from = zone, values_from = value) %>%
       mutate(total_distance=ifelse(type == "D", rowSums(across(contains("Z"))), NA))
@@ -32,7 +32,7 @@ transform_csv <- function(data, ID){
       mutate(arena=substr(variable, 1, 2),
              zone=substr(variable, 4, 5),
              type=substr(variable, 7,7)) %>%
-      dplyr::select(TIME, TIME_BIN, arena, zone, type, value, file.timestamp, file.date, file) %>%
+      dplyr::select(TIME, TIME_BIN, arena, zone, type, value, file.timestamp, file.date, file, Z_unit) %>%
       distinct() %>%
       pivot_wider(names_from = zone, values_from = value) %>%
       mutate(total_distance=ifelse(type == "D", rowSums(across(contains("Z"))), NA))

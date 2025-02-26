@@ -12,7 +12,7 @@ stopping_duration <- function(data, ID){
 
   if (ID == TRUE) {
     output <- data %>%
-      group_by(file.timestamp, arena, ID) %>%
+      group_by(file.timestamp, arena, ID, Z_unit) %>%
       mutate(
         # Assign group number only to rows where total_distance == 0
         zero_group = ifelse(total_distance == 0,
@@ -27,7 +27,7 @@ stopping_duration <- function(data, ID){
 
   } else {
     output <- data %>%
-      group_by(file.timestamp, arena) %>%
+      group_by(file.timestamp, arena, Z_unit) %>%
       mutate(
         # Assign group number only to rows where total_distance == 0
         zero_group = ifelse(total_distance == 0,
@@ -35,7 +35,7 @@ stopping_duration <- function(data, ID){
                             NA)
       ) %>%
       filter(!is.na(zero_group)) %>%
-      group_by(file.timestamp, arena, zero_group) %>%
+      group_by(file.timestamp, arena, zero_group, Z_unit) %>%
       summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
       ungroup()
   }
@@ -56,7 +56,7 @@ freezings <- function(data, ID){
   if (ID == TRUE) {
     output <- stopping_duration(data, ID=TRUE) %>%
       ungroup() %>%
-      group_by(file.timestamp, arena, ID) %>%
+      group_by(file.timestamp, arena, ID, Z_unit) %>%
       mutate(freeze.event=ifelse(duration >=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
       summarize(freeze.count=sum(freeze.event),
                 freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
@@ -66,7 +66,7 @@ freezings <- function(data, ID){
   } else {
     output <- stopping_time(data) %>%
       ungroup() %>%
-      group_by(file.timestamp, arena) %>%
+      group_by(file.timestamp, arena, Z_unit) %>%
       mutate(freeze.event=ifelse(duration>=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
       summarize(freeze.count=sum(freeze.event),
                 freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
@@ -96,7 +96,7 @@ summary_behaviour <- function(data, ID){
 
    dis <- data %>%
      filter(type == "D") %>%
-     group_by(file.timestamp, arena, ID) %>%
+     group_by(file.timestamp, arena, ID, Z_unit) %>%
      mutate(time=max(TIME_BIN)) %>%
      reframe(track_length=sum(total_distance),
              velocity= sum(total_distance)/time) %>%
@@ -107,7 +107,7 @@ summary_behaviour <- function(data, ID){
    tim <- data %>%
      filter(type == "T") %>%
      pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
-     group_by(Zone, file.timestamp, arena, ID) %>%
+     group_by(Zone, file.timestamp, arena, ID, Z_unit) %>%
      summarise(Time.in.Zone=sum(TIZ)) %>%
      mutate(Zone=paste0("time_", Zone)) %>%
      pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
@@ -121,7 +121,7 @@ summary_behaviour <- function(data, ID){
 
  dis <- data %>%
     filter(type == "D") %>%
-    group_by(file.timestamp, arena) %>%
+    group_by(file.timestamp, arena, Z_unit) %>%
     mutate(time=max(TIME_BIN)) %>%
     reframe(track_length=sum(total_distance),
               velocity= sum(total_distance)/time) %>%
@@ -132,7 +132,7 @@ summary_behaviour <- function(data, ID){
  tim <- data %>%
     filter(type == "T") %>%
     pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
-    group_by(Zone, file.timestamp, arena) %>%
+    group_by(Zone, file.timestamp, arena, Z_unit) %>%
     summarise(Time.in.Zone=sum(TIZ)) %>%
     mutate(Zone=paste0("time_", Zone)) %>%
     pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%

@@ -15,12 +15,16 @@ read_zancsv <- function(file, ID){
   start_line <- which(grepl("TIME", lines))[1]
   date <- strsplit(lines[1], ",")[[1]][3] %>%
           gsub("\"", "", .)
+  zunit <- lines[grepl("Apparatus", lines)] %>% 
+              gsub('.*\"Apparatus\",\"', '', .)  %>%
+              gsub('[\\",]', '', .)
   data <- read.csv(file, skip = start_line - 1)
   data <- data[-nrow(data), ] %>%
             mutate_all(as.numeric) %>%
             mutate(file=paste0(file),
                    file.date=as.Date(date),
-                   file.timestamp=str_replace_all(date, "[^[:alnum:]]", ""))
+                   file.timestamp=str_replace_all(date, "[^[:alnum:]]", ""),
+                   Z_unit=zunit)
 
   if (!missing(ID)) {  # Only execute this block if ID is not missing
     if (ID == "Service") {
