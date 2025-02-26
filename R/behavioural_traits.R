@@ -54,12 +54,12 @@ freezings <- function(data, ID){
   }
 
   if (ID == TRUE) {
-    output <- stopping_time(data) %>%
+    output <- stopping_duration(data, ID=TRUE) %>%
       ungroup() %>%
       group_by(file.timestamp, arena, ID) %>%
-      mutate(freeze.event=ifelse(stopping.time >=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
+      mutate(freeze.event=ifelse(duration >=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
       summarize(freeze.count=sum(freeze.event),
-                freeze.time = mean(stopping.time[freeze.event == 1], na.rm = TRUE)) %>%
+                freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
       mutate(freeze.time=ifelse(is.na(freeze.time), 0, freeze.time))%>% #Replace the na of those with no freezing time with 0
       ungroup()
 
@@ -67,9 +67,9 @@ freezings <- function(data, ID){
     output <- stopping_time(data) %>%
       ungroup() %>%
       group_by(file.timestamp, arena) %>%
-      mutate(freeze.event=ifelse(stopping.time >=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
+      mutate(freeze.event=ifelse(duration>=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
       summarize(freeze.count=sum(freeze.event),
-                freeze.time = mean(stopping.time[freeze.event == 1], na.rm = TRUE)) %>%
+                freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
       mutate(freeze.time=ifelse(is.na(freeze.time), 0, freeze.time)) %>% #Replace the na of those with no freezing time with 0
       ungroup()
   }
