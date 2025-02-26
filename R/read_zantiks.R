@@ -6,7 +6,8 @@
 #' skipping the preamble.
 #'
 #' @param file Path to the file to be imported
-#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param ID (optional) The location to look at to find identifying information.
+#'           Either "Source" or "Subject".
 #' @return A dataframe containing the csv data
 #' @export
 read_zancsv <- function(file, ID){
@@ -21,13 +22,15 @@ read_zancsv <- function(file, ID){
                    file.date=as.Date(date),
                    file.timestamp=str_replace_all(date, "[^[:alnum:]]", ""))
 
-  if(missing(ID)){
-    ID <- FALSE
-  }
-
-  if (ID == TRUE) {  # Only execute this block if ID is TRUE
+  if (!missing(ID)) {  # Only execute this block if ID is not missing
+    if (ID == "Service") {
     id <- lines[grepl("Service", lines)][1] %>%
       sub(".*'(.*?)'.*", "\\1", .)
+    } else if (ID == "Subject") {
+    id <- lines[grepl("Subject", lines)][1] %>%
+      gsub('.*\"Subject Identification\",\"', '', .)  %>%
+      gsub('[\\",]', '', .)
+    }
     data <- mutate(data, ID = paste0(id))  # Add ID column to data
   }
   rm(ID)
@@ -42,11 +45,13 @@ read_zancsv <- function(file, ID){
 #'
 #' @param dir Path to the directory where csv to be imported are stored
 #' @return A dataframe containing the csv data
+#' @param ID (optional) The location to look at to find identifying information.
+#'           Either "Source" or "Subject".
 #' @export
-read_manyzancsv <- function(dir){
+read_manyzancsv <- function(dir, ID){
   files <- list.files(dir, full.names=TRUE)
   data.list <- lapply(files, function(file){
-    read_zancsv(file, ID=TRUE)
+    read_zancsv(file, ID=ID)
   })
   do.call(rbind, data.list)
 
