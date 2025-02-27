@@ -24,7 +24,7 @@ read_zancsv <- function(file, ID){
             mutate(file=paste0(file),
                    file.date=as.Date(date),
                    file.timestamp=str_replace_all(date, "[^[:alnum:]]", ""),
-                   Z_unit=zunit)
+                   unit=zunit)
 
   if (!missing(ID)) {  # Only execute this block if ID is not missing
     if (ID == "Service") {
