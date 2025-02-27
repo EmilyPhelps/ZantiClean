@@ -28,7 +28,7 @@ transform_csv <- function(data, ID){
  } else {
 
    output<- data %>% dplyr::select(!contains("TOTAL_DISTANCE")) %>%
-      melt(., id=c("TIME", "TIME_BIN", "file","file.timestamp", "file.date")) %>%
+      melt(., id=c("TIME", "TIME_BIN", "file","file.timestamp", "file.date", "unit")) %>%
       mutate(arena=substr(variable, 1, 2),
              zone=substr(variable, 4, 5),
              type=substr(variable, 7,7)) %>%

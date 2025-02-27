@@ -9,7 +9,8 @@ read_zancsv(file, ID)
 \arguments{
 \item{file}{Path to the file to be imported}
 
-\item{ID}{a logical vector. If true, an ID will be assigned from the Service part of the file.}
+\item{ID}{(optional) The location to look at to find identifying information.
+Either "Source" or "Subject".}
 }
 \value{
 A dataframe containing the csv data

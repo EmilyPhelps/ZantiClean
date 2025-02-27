@@ -2,21 +2,20 @@
 % Please edit documentation in R/read_zantiks.R
 \name{read_manyzancsv}
 \alias{read_manyzancsv}
-\title{read_
-This function loads in all Zanticks output .csv files stored in a single directory.
-It identifies the header line and only reads in from there
-skipping the preamble.}
+\title{read_manyzancsv()}
 \usage{
-read_manyzancsv(dir)
+read_manyzancsv(dir, ID)
 }
 \arguments{
 \item{dir}{Path to the directory where csv to be imported are stored}
+
+\item{ID}{(optional) The location to look at to find identifying information.
+Either "Source" or "Subject".}
 }
 \value{
 A dataframe containing the csv data
 }
 \description{
-read_
 This function loads in all Zanticks output .csv files stored in a single directory.
 It identifies the header line and only reads in from there
 skipping the preamble.
