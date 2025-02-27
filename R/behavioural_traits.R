@@ -20,7 +20,7 @@ stopping_duration <- function(data, ID){
                             NA)
       ) %>%
       filter(!is.na(zero_group)) %>%
-      group_by(file.timestamp, arena, ID, zero_group) %>%
+      group_by(file.timestamp, arena, ID, zero_group, unit) %>%
       summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
       ungroup()
 
