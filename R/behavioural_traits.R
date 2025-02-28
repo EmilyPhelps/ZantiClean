@@ -24,7 +24,6 @@ stopping_duration <- function(data, ID){
       summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
       ungroup()
 
-
   } else {
     output <- data %>%
       group_by(file.timestamp, arena, unit) %>%
@@ -39,6 +38,24 @@ stopping_duration <- function(data, ID){
       summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
       ungroup()
   }
+  
+  missing_arenas <- setdiff(unique(data$arena), unique(output$arena))
+  
+  if(length(missing_arenas) > 0) {
+    for(arena in missing_arenas) {
+      file.timestamp <- output[1,1]
+      ID <- output[1,3]
+      unit <- output[1,5]
+      
+      new_row <- data.frame(arena = arena, 
+                            file.timestamp= file.timestamp, 
+                            ID=ID, zero_group=NA,
+                            unit=unit, duration = 0)
+      # Append the new row to output
+      output <- rbind(output, new_row)
+    }
+  }
+  
   return(output)
 }
 #'freezings()
