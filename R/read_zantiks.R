@@ -7,7 +7,7 @@
 #'
 #' @param file Path to the file to be imported
 #' @param ID (optional) The location to look at to find identifying information.
-#'           Either "Source" or "Subject".
+#'           Either "Service" or "Subject".
 #' @return A dataframe containing the csv data
 #' @export
 read_zancsv <- function(file, ID){
@@ -50,7 +50,7 @@ read_zancsv <- function(file, ID){
 #' @param dir Path to the directory where csv to be imported are stored
 #' @return A dataframe containing the csv data
 #' @param ID (optional) The location to look at to find identifying information.
-#'           Either "Source" or "Subject".
+#'           Either "Service" or "Subject".
 #' @export
 read_manyzancsv <- function(dir, ID){
   files <- list.files(dir, full.names=TRUE)

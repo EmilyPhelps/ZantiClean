@@ -10,7 +10,7 @@ read_manyzancsv(dir, ID)
 \item{dir}{Path to the directory where csv to be imported are stored}
 
 \item{ID}{(optional) The location to look at to find identifying information.
-Either "Source" or "Subject".}
+Either "Service" or "Subject".}
 }
 \value{
 A dataframe containing the csv data

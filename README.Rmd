@@ -11,7 +11,6 @@ vignette: |
   %\VignetteEncoding{UTF-8}
 ---
 
-
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -29,7 +28,7 @@ This is the official GitHub repository for the package `ZantiClean`. This packag
 
 By making this package public, we hope to enable researchers with limited data wrangling experience to make meaningful and important biological inferences. The predecessor to the Zantiks system calculated biological variables such as freezings, track length and velocity etc. automatically, making it somewhat more user friendly. This package is an effort to bridge this gap.
 
-This software is still very much under development. If you notice any bugs, have comments/queries or want additional functions that could be widely applicable please do get in touch by opening a github issue or emailing e.c.phelps@exeter.ac.uk.
+This software is still very much under development. If you notice any bugs, have comments/queries or want additional functions that could be widely applicable please do get in touch by opening a github issue or emailing [e.c.phelps\@exeter.ac.uk](mailto:e.c.phelps@exeter.ac.uk){.email}.
 
 ## Installation
 
@@ -47,22 +46,31 @@ library(ZantiClean)
 
 ## Getting Started
 
-The first function we will use is to read in Zantiks files. The files have varying numbers of lines containing preamble before the actual data starts. We want to pull out some key information from this preamble and then read the data.
+The first function we will use reads in Zantiks files. The files vary in the numbers of lines containing preamble before the actual data starts. We want to pull out some key information from this preamble and then read the data.
 
-An example of important information is the line saying [*Service:SomeInformation*](Service:SomeInformation){.uri}. This can be changed in the Zantiks code so that the *SomeInformation* can be an allocated ID. If you have not done this you can run `read_zancsv()` without it.
+An example of important information is the line saying `Service:SomeInformation`. This can be changed in the Zantiks code so that the `SomeInformation` can be an allocated ID. If you have not done this you can run `read_zancsv()` without it.
 
 ```{r}
 #If you have no ID 
 csv <- read_zancsv("path/to/your/zantiks.csv")
 
 #If you have an ID in the Service line
-csv <- read_zancsv("path/to/your/zantiks.csv", ID=TRUE)
+csv <- read_zancsv("path/to/your/zantiks.csv", ID="Service")
+
+#If you have an ID in the Subject line
+csv <- read_zancsv("path/to/your/zantiks.csv", ID="Subject")
 ```
 
-Often you wont have just one file to read in. In this case you can use `read_manyzancsv()`. Here you must use an ID since to help identify each individual.
+Often you won't have just one file to read in. In this case you can use `read_manyzancsv()`. Here you must use an ID to help identify each individual. 
+
+*NB: You could do some wrangling in bash to change the Service or Subject line to add an ID after the experiment if you havent already. e.g.* `grep "Service:" "Service:SomeInformation"`
 
 ```{r}
-csvs <- read_manyzancsv("path/to/directory/containing/csvs/")
+#If you have an ID in the Service line
+csvs <- read_manyzancsv("path/to/directory/containing/csvs/", ID="Service")
+
+#If you have an ID in the Subject line
+csvs <- read_manyzancsv("path/to/directory/containing/csvs/", ID="Subject")
 ```
 
 Next we need to transform the data so that each line represents a single individual. Again you can include an ID or not.
@@ -71,7 +79,7 @@ Next we need to transform the data so that each line represents a single individ
 trans <- transform_csv(csvs, ID=TRUE)
 ```
 
-Now we want to get some behavioural information from our data. To do this we can use the `summary_behaviour()` function
+Now we want to get some behavioural information from our data. To do this we can use the `summary_behaviour()` function.
 
 ```{r}
 data <- summary_behaviour(trans)
@@ -102,6 +110,7 @@ XY <- read_zancoord("directory/containing/coordinates", "coordinatefileXY.csv")
 ```
 
 This needs to then be transformed and filtered so we only have one individual (one arena) present.
+
 ```{r}
 A1 <- transform_xy(XY) %>% 
               filter(arena == "A1")
@@ -114,9 +123,10 @@ track_plot(XY=A1, zones=zonedata)
 ```
 
 Here's one I made earlier:
-<center>![](images/plot_test.png){width=50%}</center>
 
-This code is pretty flexible because under the hood its just ggplot. So you can add titles, change the theme and colour if you want to use the raw code. 
+<center>![](images/plot_test.png){width="50%"}</center>
+
+This code is pretty flexible because under the hood its just ggplot. So you can add titles, change the theme and colour if you want to use the raw code.
 
 ```{r}
   ggplot() + 
@@ -131,11 +141,35 @@ This code is pretty flexible because under the hood its just ggplot. So you can 
           panel.border = element_rect(colour = "#333333", fill=NA, linewidth=1))
 ```
 
+If you want to look at what regions are being used the most by an individual you can use the function `density_plot()`. 
+```{r}
+density_plot(XY, track=TRUE)
+```
+
+Inclusion of the track is optional but is `TRUE` by default. 
+
+Here is a plot I made using this function. 
+<center>![](images/density_track.png){width="50%"}</center>
+
+Similarly to the one above, its just ggplot so can be altered to change colour and theme. 
+
+```{r}
+ plot <- ggplot(data, aes(x=X, y=Y)) +
+      stat_density_2d(aes(fill = ..density..), 
+                      geom = "raster", contour = FALSE) +
+      geom_path(colour="white", alpha=0.6, linewidth=0.2) +
+      scale_fill_gradient(high="#3ce3df", low="#2683b5") +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme_void() +
+      theme(legend.position="none")
+```
 ## Changed your mind about experimental design?
 
-Obviously its not ideal to change what you want to look at after the experiment but the XY coordinates measure of Zantiks allows for this. The `allocate_zones()` function is written to allocate points to zones and create a Zantiks .csv style dataframe from this data. This is not for use in studies where Zones have built in differences e.g. tests of scototaxis. However, there might be some use cases, e.g. looking for finer scale inferences within exisitng zones, or changing zone size in open field trials.
+Obviously it's not ideal to change what you want to look at after the experiment but the XY coordinates recorded by Zantiks allows for this. The `allocate_zones()` function is written to allocate points to zones and create a Zantiks .csv style dataframe from this data. This is not for use in studies where Zones have built in differences e.g. tests of scototaxis. However, there might be some use cases, e.g. looking for finer scale inferences within existing zones, or changing zone size in open field trials.
 
 We first start by reading in a single coord file.
+
 ```{r}
 XY <- read_zancoord("directory/containing/coordinates", "coordinatefileXY.csv")
 ```
@@ -144,7 +178,8 @@ We then need to create a dataframe with our arena size. This will vary depending
 
 *Note: In a perfect world Zantiks tank size is standardised, but tank size can vary. Make sure you account for this in arena size*
 
-You can create this dataframe however you like but it must have the columns below. Arenas should be named "A1" etc to match the Zantiks XY file 
+You can create this dataframe however you like but it must have the columns below. Arenas should be named "A1" etc to match the Zantiks XY file
+
 ```{r}
 arena <- paste0("A", seq(1,4))
 xmin  <- c(0, 0, 0, 0)
@@ -155,7 +190,8 @@ ymax <- c(67.5, 135, 202.5, 270)
 arena.df <- tibble(arena, xmin, xmax, ymin, ymax)
 ```
 
-Now we need to create a dataframe delimiting the zoens we want. Each arena gets standardised so we only need to list the zones once and they will be created within each arena. You can allocate any number of zones to your arena, but the more zones the slower it will run!
+Now we need to create a dataframe delimiting the zones we want. Each arena gets standardised so we only need to list the zones once and they will be created within each arena. You can allocate any number of zones to your arena, but the more zones the slower it will run!
+
 ```{r}
 # An example of 2 zones side by side
 Zone <-c("Z1", "Z2")
@@ -169,9 +205,10 @@ zone.df <- tibble(Zone, xmin, xmax, ymin, ymax)
 allocate_zones(XY=XY, zones = zone.df, arena = arena.df, start= 50, end=480)
 ```
 
-The start time above indicates the time after calibration and after acclimatization. The end time indicates the upper time limit for the assay. 
+The start time above indicates the time after calibration and after acclimatization. The end time indicates the upper time limit for the assay.
 
 The `allocate_zones()` function can also account for nested designs where zone is within the other. Here you can only allocate two zones, inner and outer.
+
 ```{r}
 Zone<- c("Z_inner", "Z_outer")
 xmin <- c(100, 0)
@@ -185,6 +222,7 @@ allocate_zones(XY=xy, zones = zone.df, arena=arena.df, start=50, end=480, file =
 ```
 
 I have only gone through an example with one file here. If you wanted to scale this up to apply to all your files you could use lapply()
+
 ```{r}
 dir <- "path/to/directory"
 

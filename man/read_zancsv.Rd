@@ -10,7 +10,7 @@ read_zancsv(file, ID)
 \item{file}{Path to the file to be imported}
 
 \item{ID}{(optional) The location to look at to find identifying information.
-Either "Source" or "Subject".}
+Either "Service" or "Subject".}
 }
 \value{
 A dataframe containing the csv data
