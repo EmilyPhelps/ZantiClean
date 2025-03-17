@@ -4,7 +4,7 @@
 \alias{freezings}
 \title{freezings()}
 \usage{
-freezings(data, ID)
+freezings(data, ID, frz)
 }
 \arguments{
 \item{data}{Zantiks transformed csv}

@@ -91,16 +91,26 @@ This will add:
 
 -   **Velocity:** The average speed.
 
--   **Freezing:** The number times the organism was stationary for 3 seconds or more.
+-   **Freezing:** The number times the organism was stationary for 3 (default) seconds or more.
 
 -   **Time in Zones:** The time spent in each zone.
 
+What is considered freezing might be different in different species. To change freezing time from the default 3 seconds use the `frz` option.
+
+```{r}
+summary_behaviour(trans, ID=FALSE, frz=10)
+```
 However, sometimes you want to look at pre and post a stimulus or change in environment. E.g. if turned the lights off after 240 seconds.To get these estimates for before and after an event we can do
 
 ```{r}
-split_behaviour(data=trans,time = 240)
+split_behaviour(data=trans, time = 240)
 ```
 
+Equally you can change the freezing time here
+
+```{r}
+split_behaviour(data=trans, time = 240, frz=5)
+```
 ## Looking at XY data
 
 Sometimes we need a quick look the overall movement of the individual. To do this we can read in our XY coordinates.

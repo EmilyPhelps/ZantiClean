@@ -65,16 +65,20 @@ stopping_duration <- function(data, ID){
 #' @param data Zantiks transformed csv
 #' @param ID A logical vector. If true, an ID will be assigned from the Service part of the file.
 #' @returns Summary of the freezing including total number of freezing and average number of freezing.
-freezings <- function(data, ID){
+freezings <- function(data, ID, frz){
   if(missing(ID)){
     ID <- FALSE
+  }
+  
+  if(missing(frz)){
+    frz <- 3
   }
 
   if (ID == TRUE) {
     output <- stopping_duration(data, ID=TRUE) %>%
       ungroup() %>%
       group_by(file.timestamp, arena, ID, unit) %>%
-      mutate(freeze.event=ifelse(duration >=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
+      mutate(freeze.event=ifelse(duration >= frz, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
       summarize(freeze.count=sum(freeze.event),
                 freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
       mutate(freeze.time=ifelse(is.na(freeze.time), 0, freeze.time))%>% #Replace the na of those with no freezing time with 0
@@ -84,7 +88,7 @@ freezings <- function(data, ID){
     output <- stopping_time(data) %>%
       ungroup() %>%
       group_by(file.timestamp, arena, unit) %>%
-      mutate(freeze.event=ifelse(duration>=3, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
+      mutate(freeze.event=ifelse(duration>= frz, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
       summarize(freeze.count=sum(freeze.event),
                 freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
       mutate(freeze.time=ifelse(is.na(freeze.time), 0, freeze.time)) %>% #Replace the na of those with no freezing time with 0
@@ -103,13 +107,17 @@ freezings <- function(data, ID){
 #' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
 #' @return A dataframe containing summary behavioural variables
 #' @export
-summary_behaviour <- function(data, ID){
+summary_behaviour <- function(data, ID, frz){
  if(missing(ID)){
     ID <- FALSE
  }
 
+  if(missing(frz)){
+    frz <- 3
+  }
+  
  if (ID == TRUE) {
-   free <- freezings(data, ID=TRUE) #Calculate the freezing information
+   free <- freezings(data, ID=TRUE, frz=frz) #Calculate the freezing information
 
    dis <- data %>%
      filter(type == "D") %>%
@@ -134,7 +142,7 @@ summary_behaviour <- function(data, ID){
      left_join(., free)
 
  } else {
- free <- freezings(data) #Calculate the freezing information
+ free <- freezings(data, frz=frz) #Calculate the freezing information
 
  dis <- data %>%
     filter(type == "D") %>%
@@ -170,15 +178,19 @@ return(output)
 #' @param time Time in seconds, in which to divide data by.
 #' @return A dataframe containing summary behavioral variables
 #' @export
-split_behaviour <- function(data, time){
+split_behaviour <- function(data, time, frz){
   if(missing(ID)){
     ID <- FALSE
   }
-
+  
+  if(missing(frz)){
+    frz <- 3
+  }
+  
   if (ID == TRUE) {
     pre <- csv %>%
       filter(TIME_BIN<=time) %>%
-      summary_behaviour(., ID=TRUE) %>%
+      summary_behaviour(., ID=TRUE, frz=frz) %>%
       mutate(timesplit=paste0("pre", time)) %>%
       rename_with(~paste0("pre", time, .),
                   c(track_length, velocity, freeze.count, freeze.time,
@@ -186,7 +198,7 @@ split_behaviour <- function(data, time){
 
     post <- csv %>%
       filter(TIME_BIN>=time) %>%
-      summary_behaviour(., ID=TRUE) %>%
+      summary_behaviour(., ID=TRUE, frz=frz) %>%
       mutate(timesplit=paste0("post", time)) %>%
       rename_with(~paste0("post", time, .),
                   c(track_length, velocity, freeze.count, freeze.time,
@@ -194,7 +206,7 @@ split_behaviour <- function(data, time){
   } else {
   pre <- csv %>%
     filter(TIME_BIN<=time) %>%
-    summary_behaviour() %>%
+    summary_behaviour(., frz=frz) %>%
     mutate(timesplit=paste0("pre", time)) %>%
     rename_with(~paste0("pre", time, .),
                 c(track_length, velocity, freeze.count, freeze.time,
@@ -202,7 +214,7 @@ split_behaviour <- function(data, time){
 
   post <- csv %>%
     filter(TIME_BIN>=time) %>%
-    summary_behaviour() %>%
+    summary_behaviour(., frz=frz) %>%
     mutate(timesplit=paste0("post", time)) %>%
     rename_with(~paste0("post", time, .),
                 c(track_length, velocity, freeze.count, freeze.time,

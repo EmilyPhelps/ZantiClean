@@ -4,7 +4,7 @@
 \alias{summary_behaviour}
 \title{summary_behaviour()}
 \usage{
-summary_behaviour(data, ID)
+summary_behaviour(data, ID, frz)
 }
 \arguments{
 \item{data}{Zantiks transformed csv}
