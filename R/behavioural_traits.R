@@ -85,7 +85,7 @@ freezings <- function(data, ID, frz){
       ungroup()
 
   } else {
-    output <- stopping_time(data) %>%
+    output <- stopping_duration(data) %>%
       ungroup() %>%
       group_by(file.timestamp, arena, unit) %>%
       mutate(freeze.event=ifelse(duration>= frz, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
@@ -178,7 +178,7 @@ return(output)
 #' @param time Time in seconds, in which to divide data by.
 #' @return A dataframe containing summary behavioral variables
 #' @export
-split_behaviour <- function(data, time, frz){
+split_behaviour <- function(data, time, ID, frz){
   if(missing(ID)){
     ID <- FALSE
   }
@@ -188,7 +188,7 @@ split_behaviour <- function(data, time, frz){
   }
   
   if (ID == TRUE) {
-    pre <- csv %>%
+    pre <- data %>%
       filter(TIME_BIN<=time) %>%
       summary_behaviour(., ID=TRUE, frz=frz) %>%
       mutate(timesplit=paste0("pre", time)) %>%
@@ -196,7 +196,7 @@ split_behaviour <- function(data, time, frz){
                   c(track_length, velocity, freeze.count, freeze.time,
                     time_Z1, time_Z2, time_Z3, time_Z4))
 
-    post <- csv %>%
+    post <- data %>%
       filter(TIME_BIN>=time) %>%
       summary_behaviour(., ID=TRUE, frz=frz) %>%
       mutate(timesplit=paste0("post", time)) %>%
@@ -204,23 +204,17 @@ split_behaviour <- function(data, time, frz){
                   c(track_length, velocity, freeze.count, freeze.time,
                     time_Z1, time_Z2, time_Z3, time_Z4))
   } else {
-  pre <- csv %>%
+  pre <- data %>%
     filter(TIME_BIN<=time) %>%
     summary_behaviour(., frz=frz) %>%
-    mutate(timesplit=paste0("pre", time)) %>%
-    rename_with(~paste0("pre", time, .),
-                c(track_length, velocity, freeze.count, freeze.time,
-                  time_Z1, time_Z2, time_Z3, time_Z4))
+    mutate(timesplit=paste0("pre", time)) 
 
-  post <- csv %>%
+  post <- data %>%
     filter(TIME_BIN>=time) %>%
     summary_behaviour(., frz=frz) %>%
-    mutate(timesplit=paste0("post", time)) %>%
-    rename_with(~paste0("post", time, .),
-                c(track_length, velocity, freeze.count, freeze.time,
-                  time_Z1, time_Z2, time_Z3, time_Z4))
+    mutate(timesplit=paste0("post", time))
 
-  output <- left_join(pre, post)
   }
+  output <- rbind(pre, post)
   return(output)
 }

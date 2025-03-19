@@ -4,7 +4,7 @@
 \alias{split_behaviour}
 \title{split_behaviour()}
 \usage{
-split_behaviour(data, time)
+split_behaviour(data, time, ID, frz)
 }
 \arguments{
 \item{data}{zantiks transformed csv.}
