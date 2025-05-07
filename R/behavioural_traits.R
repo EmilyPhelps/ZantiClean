@@ -96,6 +96,65 @@ freezings <- function(data, ID, frz){
   }
   return(output)
 }
+#' calc_area()
+#'
+#' This function estimates the proportion of the arena that covered
+#' using the xy coordinates provided by Zantiks. 
+#'
+#' @param xy Transformed Zantiks coordinates.
+#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param arena.df A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+#'         This should include xmin, xmax, ymin, ymax for each arena.
+#' @return A dataframe containing arena measurements for each individual.
+#' @export
+#' 
+calc_area <- function(xy, arena.df, ID){
+  if(missing(ID)){
+    ID <- FALSE
+  }
+  
+  width <- arena.df[1,]$xmax- arena.df[1,]$xmin
+  height <- arena.df[1,]$ymax-arena.df[1,]$ymin
+  
+  rel.xy <- left_join(xy, arena.df) %>% #Calculate the relative coordinates due to arena structure
+    mutate(rel.X=X-xmin, rel.Y=Y-ymin)
+  
+  if (ID == TRUE) {
+
+  left_join(xy, arena.df,by=c("arena"))
+  df_roundwalk <- data_frame(Move = 1:nrow(rel.xy),
+                             arena = rel.xy$arena,
+                             file.timestamp=rel.xy$file.timestamp,
+                             ID=rel.xy$ID,
+                             x_round = floor(rel.xy$rel.X),
+                             y_round = floor(rel.xy$rel.Y)) |>  
+    group_by(arena, file.timestamp,ID, x_round, y_round) |> 
+    summarise(score = n())
+  
+  area_cov <- df_roundwalk %>%
+    left_join(., arena.df) %>%
+    group_by(arena, file.timestamp, ID) %>%
+    summarize(area=round((n()/(width*height))*100,1))
+  
+  } else {
+    
+    left_join(xy, arena.df,by=c("arena"))
+    df_roundwalk <- data_frame(Move = 1:nrow(rel.xy),
+                               arena = rel.xy$arena,
+                               file.timestamp=rel.xy$file.timestamp,
+                               x_round = floor(rel.xy$rel.X),
+                               y_round = floor(rel.xy$rel.Y)) |>  
+      group_by(arena, file.timestamp,ID, x_round, y_round) |> 
+      summarise(score = n())
+    
+    area_cov <- df_roundwalk %>%
+      left_join(., arena.df) %>%
+      group_by(arena, file.timestamp) %>%
+      summarize(area=round((n()/(width*height))*100,1))
+    
+  }
+  return(area_cov)
+}
 #' summary_behaviour()
 #'
 #' This function estimates the summary behaviour data from the
@@ -104,21 +163,27 @@ freezings <- function(data, ID, frz){
 #' movement for three seconds)
 #'
 #' @param data Zantiks transformed csv
+#' @param xy Zantiks transformed xy coords
+#' @param arena.df A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+#'         This should include xmin, xmax, ymin, ymax for each arena.
 #' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param frz A threshold value after which individuals should be considered to be exhibiting a freeze response. 
 #' @return A dataframe containing summary behavioural variables
 #' @export
-summary_behaviour <- function(data, ID, frz){
+summary_behaviour <- function(data, xy, arena.df, ID, frz){
  if(missing(ID)){
     ID <- FALSE
  }
 
-  if(missing(frz)){
+if(missing(frz)){
     frz <- 3
-  }
+}
   
  if (ID == TRUE) {
    free <- freezings(data, ID=TRUE, frz=frz) #Calculate the freezing information
-
+   
+   area <- calc_area(xy, ID=TRUE, arena.df)
+   
    dis <- data %>%
      filter(type == "D") %>%
      group_by(file.timestamp, arena, ID, unit) %>%
