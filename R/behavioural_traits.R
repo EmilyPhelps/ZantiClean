@@ -1,9 +1,9 @@
 ## Functions for getting behavioural traits from Zantiks data.
 #' stopping_duration()
 #'
-#'This function estimates the time stopped from the zantiks csv files.
+#'This function estimates the time stopped from the Zantiks csv files.
 #' @param data Zantiks transformed csv
-#' @param ID A logical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
 #' @returns A dataframe containing duration of each stopping event, e.g. when total distance is 0.
 stopping_duration <- function(data, ID){
   if(missing(ID)){
@@ -63,7 +63,8 @@ stopping_duration <- function(data, ID){
 #' This function estimates whether a stopping is actually a freezing event and
 #' calculates the number of freezing events and the average time spent frozen.
 #' @param data Zantiks transformed csv
-#' @param ID A logical vector. If true, an ID will be assigned from the Service part of the file.
+#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
+#' @param frz The number of seconds after which an animal can be considered to give the freezing response.
 #' @returns Summary of the freezing including total number of freezing and average number of freezing.
 freezings <- function(data, ID, frz){
   if(missing(ID)){
@@ -102,8 +103,8 @@ freezings <- function(data, ID, frz){
 #' using the xy coordinates provided by Zantiks. 
 #'
 #' @param xy Transformed Zantiks coordinates.
-#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
-#' @param arena.df A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
+#' @param arena.df (optional) A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 #'         This should include xmin, xmax, ymin, ymax for each arena.
 #' @return A dataframe containing arena measurements for each individual.
 #' @export
@@ -146,7 +147,7 @@ calc_area <- function(xy, arena.df){
 #' summary_behaviour()
 #'
 #' This function estimates the summary behaviour data from the
-#' zantiks csv. The variables included are time in each zone,
+#' Zantiks csv. The variables included are time in each zone,
 #' overall velocity, track length, freezings (calculated as no
 #' movement for three seconds)
 #'
@@ -154,8 +155,8 @@ calc_area <- function(xy, arena.df){
 #' @param xy Zantiks transformed xy coords
 #' @param arena.df A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 #'         This should include xmin, xmax, ymin, ymax for each arena.
-#' @param ID a logical vector. If true, an ID will be assigned from the Service part of the file.
-#' @param frz A threshold value after which individuals should be considered to be exhibiting a freeze response. 
+#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
+#' @param frz (optional) A threshold value after which individuals should be considered to be exhibiting a freeze response. 
 #' @return A dataframe containing summary behavioural variables
 #' @export
 
@@ -232,9 +233,9 @@ return(output)
 #' for differences in assay that can be divided by time. E.g.
 #' light for the first X seconds, dark for next X seconds.
 #'
-#' @param data zantiks transformed csv.
+#' @param data Zantiks transformed csv.
 #' @param time Time in seconds, in which to divide data by.
-#' @return A dataframe containing summary behavioral variables
+#' @return A dataframe containing summary behavioural variables
 #' @export
 split_behaviour <- function(data, time, ID, frz){
   if(missing(ID)){

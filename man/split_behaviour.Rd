@@ -7,12 +7,12 @@
 split_behaviour(data, time, ID, frz)
 }
 \arguments{
-\item{data}{zantiks transformed csv.}
+\item{data}{Zantiks transformed csv.}
 
 \item{time}{Time in seconds, in which to divide data by.}
 }
 \value{
-A dataframe containing summary behavioral variables
+A dataframe containing summary behavioural variables
 }
 \description{
 This function estimates the behaviour variables accounting

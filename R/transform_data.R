@@ -1,4 +1,4 @@
-## Functions to get behavioural traits from zanticks data
+## Functions to get behavioural traits from Zantiks data
 #' transform_csv()
 #'
 #' This function takes the wide dataframe and makes it longer so each row

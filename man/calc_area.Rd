@@ -9,10 +9,10 @@ calc_area(xy, arena.df)
 \arguments{
 \item{xy}{Transformed Zantiks coordinates.}
 
-\item{arena.df}{A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+\item{arena.df}{(optional) A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 This should include xmin, xmax, ymin, ymax for each arena.}
 
-\item{ID}{a logical vector. If true, an ID will be assigned from the Service part of the file.}
+\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
 }
 \value{
 A dataframe containing arena measurements for each individual.

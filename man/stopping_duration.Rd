@@ -9,11 +9,11 @@ stopping_duration(data, ID)
 \arguments{
 \item{data}{Zantiks transformed csv}
 
-\item{ID}{A logical vector. If true, an ID will be assigned from the Service part of the file.}
+\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
 }
 \value{
 A dataframe containing duration of each stopping event, e.g. when total distance is 0.
 }
 \description{
-This function estimates the time stopped from the zantiks csv files.
+This function estimates the time stopped from the Zantiks csv files.
 }

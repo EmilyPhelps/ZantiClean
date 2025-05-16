@@ -9,7 +9,9 @@ freezings(data, ID, frz)
 \arguments{
 \item{data}{Zantiks transformed csv}
 
-\item{ID}{A logical vector. If true, an ID will be assigned from the Service part of the file.}
+\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
+
+\item{frz}{The number of seconds after which an animal can be considered to give the freezing response.}
 }
 \value{
 Summary of the freezing including total number of freezing and average number of freezing.

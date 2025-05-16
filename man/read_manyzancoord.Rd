@@ -10,8 +10,8 @@ read_manyzancoord(dir)
 \item{dir}{Directory containing the coordinate files to be imported}
 }
 \value{
-A dataframe containing the coord data
+A dataframe containing the coordinate data
 }
 \description{
-This function loads in a many .coord output files from Zanticks.
+This function loads in a many .coord output files from Zantiks.
 }

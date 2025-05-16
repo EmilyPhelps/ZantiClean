@@ -14,16 +14,16 @@ summary_behaviour(data, xy, arena.df, ID, frz)
 \item{arena.df}{A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 This should include xmin, xmax, ymin, ymax for each arena.}
 
-\item{ID}{a logical vector. If true, an ID will be assigned from the Service part of the file.}
+\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
 
-\item{frz}{A threshold value after which individuals should be considered to be exhibiting a freeze response.}
+\item{frz}{(optional) A threshold value after which individuals should be considered to be exhibiting a freeze response.}
 }
 \value{
 A dataframe containing summary behavioural variables
 }
 \description{
 This function estimates the summary behaviour data from the
-zantiks csv. The variables included are time in each zone,
+Zantiks csv. The variables included are time in each zone,
 overall velocity, track length, freezings (calculated as no
 movement for three seconds)
 }

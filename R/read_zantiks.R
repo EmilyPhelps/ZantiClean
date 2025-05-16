@@ -43,13 +43,13 @@ read_zancsv <- function(file, ID){
 }
 #' read_manyzancsv()
 #' 
-#' This function loads in all Zanticks output .csv files stored in a single directory.
+#' This function loads in all Zantiks output .csv files stored in a single directory.
 #' It identifies the header line and only reads in from there
 #' skipping the preamble.
 #'
 #' @param dir Path to the directory where csv to be imported are stored
 #' @return A dataframe containing the csv data
-#' @param ID (optional) The location to look at to find identifying information.
+#' @param ID The location to look at to find identifying information.
 #'           Either "Service" or "Subject".
 #' @export
 read_manyzancsv <- function(dir, ID){
@@ -62,7 +62,7 @@ read_manyzancsv <- function(dir, ID){
 }
 #' read_zancoord()
 #'
-#' This function loads in a single .coord file output from Zanticks.
+#' This function loads in a single .coord file output from Zantiks.
 #'
 #' @param file Name of file to the coordinate file to be imported
 #' @param dir Directory containing the coordinate file to be imported
@@ -77,10 +77,10 @@ read_zancoord <- function(dir, file){
 }
 #' read_manyzancoord()
 #'
-#' This function loads in a many .coord output files from Zanticks.
+#' This function loads in a many .coord output files from Zantiks.
 #'
 #' @param dir Directory containing the coordinate files to be imported
-#' @return A dataframe containing the coord data
+#' @return A dataframe containing the coordinate data
 #' @export
 read_manyzancoord <- function(dir){
   files <- list.files(dir, full.names=FALSE)

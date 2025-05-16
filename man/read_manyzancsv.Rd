@@ -9,14 +9,14 @@ read_manyzancsv(dir, ID)
 \arguments{
 \item{dir}{Path to the directory where csv to be imported are stored}
 
-\item{ID}{(optional) The location to look at to find identifying information.
+\item{ID}{The location to look at to find identifying information.
 Either "Service" or "Subject".}
 }
 \value{
 A dataframe containing the csv data
 }
 \description{
-This function loads in all Zanticks output .csv files stored in a single directory.
+This function loads in all Zantiks output .csv files stored in a single directory.
 It identifies the header line and only reads in from there
 skipping the preamble.
 }

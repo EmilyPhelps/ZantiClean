@@ -15,5 +15,5 @@ read_zancoord(dir, file)
 A dataframe containing the coord data
 }
 \description{
-This function loads in a single .coord file output from Zanticks.
+This function loads in a single .coord file output from Zantiks.
 }
