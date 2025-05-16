@@ -108,51 +108,28 @@ freezings <- function(data, ID, frz){
 #' @return A dataframe containing arena measurements for each individual.
 #' @export
 #' 
-calc_area <- function(xy, arena.df, ID){
-  if(missing(ID)){
-    ID <- FALSE
-  }
-  
+calc_area <- function(xy, arena.df){
   width <- arena.df[1,]$xmax- arena.df[1,]$xmin
   height <- arena.df[1,]$ymax-arena.df[1,]$ymin
   
   rel.xy <- left_join(xy, arena.df) %>% #Calculate the relative coordinates due to arena structure
     mutate(rel.X=X-xmin, rel.Y=Y-ymin)
   
-  if (ID == TRUE) {
 
   left_join(xy, arena.df,by=c("arena"))
   df_roundwalk <- data_frame(Move = 1:nrow(rel.xy),
                              arena = rel.xy$arena,
                              file.timestamp=rel.xy$file.timestamp,
-                             ID=rel.xy$ID,
                              x_round = floor(rel.xy$rel.X),
                              y_round = floor(rel.xy$rel.Y)) |>  
-    group_by(arena, file.timestamp,ID, x_round, y_round) |> 
+    group_by(arena, file.timestamp, x_round, y_round) |> 
     summarise(score = n())
   
   area_cov <- df_roundwalk %>%
     left_join(., arena.df) %>%
-    group_by(arena, file.timestamp, ID) %>%
+    group_by(arena, file.timestamp) %>%
     summarize(area=round((n()/(width*height))*100,1))
   
-  } else {
-    
-    left_join(xy, arena.df,by=c("arena"))
-    df_roundwalk <- data_frame(Move = 1:nrow(rel.xy),
-                               arena = rel.xy$arena,
-                               file.timestamp=rel.xy$file.timestamp,
-                               x_round = floor(rel.xy$rel.X),
-                               y_round = floor(rel.xy$rel.Y)) |>  
-      group_by(arena, file.timestamp,ID, x_round, y_round) |> 
-      summarise(score = n())
-    
-    area_cov <- df_roundwalk %>%
-      left_join(., arena.df) %>%
-      group_by(arena, file.timestamp) %>%
-      summarize(area=round((n()/(width*height))*100,1))
-    
-  }
   return(area_cov)
 }
 #' summary_behaviour()
@@ -170,6 +147,7 @@ calc_area <- function(xy, arena.df, ID){
 #' @param frz A threshold value after which individuals should be considered to be exhibiting a freeze response. 
 #' @return A dataframe containing summary behavioural variables
 #' @export
+
 summary_behaviour <- function(data, xy, arena.df, ID, frz){
  if(missing(ID)){
     ID <- FALSE
@@ -182,7 +160,7 @@ if(missing(frz)){
  if (ID == TRUE) {
    free <- freezings(data, ID=TRUE, frz=frz) #Calculate the freezing information
    
-   area <- calc_area(xy, ID=TRUE, arena.df)
+   area <- calc_area(xy, arena.df)
    
    dis <- data %>%
      filter(type == "D") %>%
@@ -204,11 +182,14 @@ if(missing(frz)){
      ungroup()
 
    output <- left_join(dis, tim) %>%
-     left_join(., free)
+     left_join(., free) %>%
+     left_join(., area)
 
  } else {
  free <- freezings(data, frz=frz) #Calculate the freezing information
-
+ 
+ area <- calc_area(xy, arena.df)
+ 
  dis <- data %>%
     filter(type == "D") %>%
     group_by(file.timestamp, arena, unit) %>%
@@ -229,7 +210,8 @@ if(missing(frz)){
     ungroup()
 
  output <- left_join(dis, tim) %>%
-   left_join(., free)
+   left_join(., free) %>%
+   left_join(., area)
  }
 return(output)
 }

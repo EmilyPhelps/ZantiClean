@@ -74,7 +74,6 @@ read_zancoord <- function(dir, file){
   data <- read_csv(paste0(dir, file)) %>%
     mutate(file.timestamp=timestamp)
   return(data)
-
 }
 #' read_manyzancoord()
 #'
