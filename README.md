@@ -185,7 +185,7 @@ A1 <- transform_xy(XY) %>%
 Before we plot our individuals path, we need to get the coordinates of
 the zones our arena was split into. This should be stored as a dataframe
 containing the columns “zone”, “xmin”, “xmax”, “ymax”, “ymin” and
-“colour”.
+“colour”. This could be created using a similar method to how I made the arena.df above.
 
 ``` r
 track_plot(XY=A1, zones=zonedata)
