@@ -109,6 +109,17 @@ freezings <- function(data, ID, frz){
 #' @export
 #' 
 calc_area <- function(xy, arena.df){
+  if(missing(arena.df)){
+    area_cov <- data_frame(Move = 1:nrow(xy),
+               x_round = floor(xy$X),
+               y_round = floor(xy$Y)) |>  
+      group_by(x_round, y_round) |> 
+      group_by(x_round, y_round) %>%
+      summarise(score = n(), .groups = "drop") %>%
+      summarise(area = round((n() / (width * height)) * 100, 1))
+    
+    
+  }else{
   width <- arena.df[1,]$xmax- arena.df[1,]$xmin
   height <- arena.df[1,]$ymax-arena.df[1,]$ymin
   
@@ -129,7 +140,7 @@ calc_area <- function(xy, arena.df){
     left_join(., arena.df) %>%
     group_by(arena, file.timestamp) %>%
     summarize(area=round((n()/(width*height))*100,1))
-  
+  }
   return(area_cov)
 }
 #' summary_behaviour()
@@ -265,3 +276,4 @@ split_behaviour <- function(data, time, ID, frz){
   output <- rbind(pre, post)
   return(output)
 }
+

@@ -4,12 +4,19 @@
 \alias{summary_behaviour}
 \title{summary_behaviour()}
 \usage{
-summary_behaviour(data, ID, frz)
+summary_behaviour(data, xy, arena.df, ID, frz)
 }
 \arguments{
 \item{data}{Zantiks transformed csv}
 
+\item{xy}{Zantiks transformed xy coords}
+
+\item{arena.df}{A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+This should include xmin, xmax, ymin, ymax for each arena.}
+
 \item{ID}{a logical vector. If true, an ID will be assigned from the Service part of the file.}
+
+\item{frz}{A threshold value after which individuals should be considered to be exhibiting a freeze response.}
 }
 \value{
 A dataframe containing summary behavioural variables

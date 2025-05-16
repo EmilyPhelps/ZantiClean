@@ -4,7 +4,7 @@
 \alias{calc_area}
 \title{calc_area()}
 \usage{
-calc_area(xy, arena.df, ID)
+calc_area(xy, arena.df)
 }
 \arguments{
 \item{xy}{Transformed Zantiks coordinates.}
