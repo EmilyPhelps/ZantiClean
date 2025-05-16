@@ -20,7 +20,7 @@ emailing <e.c.phelps@exeter.ac.uk>.
 
 ## Installation
 
-This package requires installation from github. This requires devtools.
+This package currrently requires installation from github. This requires devtools.
 
 ``` r
 #Check if devtools is installed, if not install it
@@ -31,7 +31,16 @@ if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
 devtools::install_github("EmilyPhelps/ZantiClean")
 library(ZantiClean)
 ```
+### Dependencies
+This package requires `tidyverse`, `ggplot2` and `reshape2`. If these are not installed/ 
+loaded with ZantiClean, you can install them through cran.
+```{r}
+install.packages("tidyverse", "ggplot2", "reshape2")
 
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+```
 ## Getting Started
 
 The first function we will use reads in Zantiks files. The files vary in
@@ -41,8 +50,9 @@ read the data.
 
 An example of important information is the line saying
 `Service:SomeInformation`. This can be changed in the Zantiks code so
-that the `SomeInformation` can be an allocated ID. If you have not done
-this you can run `read_zancsv()` without it.
+that the `SomeInformation` can be an allocated ID. Alternatively you may have 
+included an ID in the `Subject` line. You can specify this in the `read_zancsv()`
+function If you have not done this you can run `read_zancsv()` without it. 
 
 ``` r
 #If you have no ID 
@@ -79,10 +89,46 @@ trans <- transform_csv(csvs, ID=TRUE)
 ```
 
 Now we want to get some behavioural information from our data. To do
-this we can use the `summary_behaviour()` function.
+this we can use the `summary_behaviour()` function. However, this function requires
+a few inputs
 
+- **data** This is the transformed data we just made based on the Zantiks .csv file
+
+- **xy** This is a transformed dataframe from the Zantiks coordinates file.
+
+- **arena.df** This is a dataframe giving the limits to the arenas we have in our assay.
+
+To get the XY coordinates from Zantiks we can read in the coordinates file. This can be 
+done with `read_zancoord()`. Similarly to reading the .csv files, we can actually read 
+many at the same time so we will do that here. 
+
+```r
+xy <- read_manyzancoord("path/to/directory/containing/csvs/") %>%
+      transform_xy(.)
+```
+
+Above I have also piped the output from the `read_manyzancoord()` function into the `transform_xy()` 
+function. You can pipe any of the ZantiClean functions into any tidyverse function because it is
+built with tidyverse. `transform_xy()` will transform the original dataframe into one where each line
+equates to a single individual.
+
+Now we need to make our `arena.df`. This dataframe must have `xmin`, `xmax`, `ymin`, `ymax` and `arena`
+variables. To do this, I make vectors containing the information for these variables and bind them together
+using `tibble()`. We have used a set up where the tanks are split on horizontally.
+
+```{r}
+xmin <- c(0,0,0,0) 
+xmax <- c(360,360,360,360)
+ymin <- c(0, 67.5, 135, 202)
+ymax <- c(67.5, 135, 202, 270)
+arena <- c("A1", "A2", "A3", "A4")
+
+arena.df <- tibble(xmin, xmax, ymin, ymax, arena)
+```
+
+Now we can calculate the behavioural data
 ``` r
-data <- summary_behaviour(trans)
+data <- summary_behaviour(data=trans, arena.df, xy)
 ```
 
 This will add:
@@ -95,6 +141,8 @@ This will add:
   (default) seconds or more.
 
 - **Time in Zones:** The time spent in each zone.
+
+- **Area** The percentage of the arena covered.
 
 What is considered freezing might be different in different species. To
 change freezing time from the default 3 seconds use the `frz` option.
@@ -117,7 +165,7 @@ Equally you can change the freezing time here
 split_behaviour(data=trans, time = 240, frz=5)
 ```
 
-## Looking at XY data
+## Plotting Track
 
 Sometimes we need a quick look the overall movement of the individual.
 To do this we can read in our XY coordinates.
