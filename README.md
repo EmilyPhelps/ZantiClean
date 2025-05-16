@@ -164,6 +164,29 @@ Equally you can change the freezing time here
 ``` r
 split_behaviour(data=trans, time = 240, frz=5)
 ```
+## Relative Area
+You would expect that as a fish (or other animal) travels further e.g. having a
+longer track length it would also cover more of an arena, e.g. having a higher area. 
+
+However, in a thigmotaxis stress response, fish (or other animals..) will hug the wall, 
+sometimes circling around and around looking for an escape route. This is results in 
+a long track length but low area covered because the same region is being traversed over 
+and over again. 
+
+To separate the above response from a relaxed exploratory one, [Houslay et al. 2022](https://elifesciences.org/articles/67126)
+created a variable called relative area. This estimates the area a fish (or other animal) 
+would be expected to cover based on its track length and calculates the difference between 
+the expected and observed area. This is done using simulated random swims which can be read 
+more about in the paper.
+
+To do this using ZantiClean you can run:
+
+```{r}
+estimate_RA("directory/to/xy/files", behav, arena.df)
+```
+Where random files from the directory given will be sampled to estimate true step sizes needed to 
+simulate data. The `behav` variable is a dataframe containing the behavioural data you have previously 
+generated. `arena.df` is the same as above. 
 
 ## Plotting Track
 
