@@ -11,7 +11,7 @@ stopping_duration <- function(data, ID){
   }
 
   if (ID == TRUE) {
-    output <- data %>%
+    output <- data %>% 
       group_by(file.timestamp, arena, ID, unit) %>%
       mutate(
         # Assign group number only to rows where total_distance == 0
@@ -25,7 +25,7 @@ stopping_duration <- function(data, ID){
       ungroup()
 
   } else {
-    output <- data %>%
+    output <- data %>% 
       group_by(file.timestamp, arena, unit) %>%
       mutate(
         # Assign group number only to rows where total_distance == 0
