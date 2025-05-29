@@ -18,7 +18,7 @@ read_zancsv <- function(file, ID){
   zunit <- lines[grepl("Apparatus", lines)] %>% 
               gsub('.*\"Apparatus\",\"', '', .)  %>%
               gsub('[\\",]', '', .)
-  data <- read.csv(file, skip = start_line - 1, show_col_types = FALSE)
+  data <- read.csv(file, skip = start_line - 1)
   data <- data[-nrow(data), ] %>%
             mutate_all(as.numeric) %>%
             mutate(file=paste0(file),
@@ -55,7 +55,7 @@ read_zancsv <- function(file, ID){
 read_manyzancsv <- function(dir, ID){
   files <- list.files(dir, full.names=TRUE)
   data.list <- lapply(files, function(file){
-    read_zancsv(file, ID=ID, show_col_types = FALSE)
+    read_zancsv(file, ID=ID)
   })
   do.call(rbind, data.list)
 
@@ -71,7 +71,7 @@ read_manyzancsv <- function(dir, ID){
 read_zancoord <- function(dir, file){
   timestamp <- str_split(file, "-")[[1]][2] %>% gsub("T", "", .)
 
-  data <- read_csv(paste0(dir, file), show_col_types = FALSE) %>%
+  data <- read_csv(paste0(dir, file)) %>%
     mutate(file.timestamp=timestamp)
   return(data)
 }
@@ -85,7 +85,7 @@ read_zancoord <- function(dir, file){
 read_manyzancoord <- function(dir){
   files <- list.files(dir, full.names=FALSE)
   data.list <- lapply(files, function(file){
-    read_zancoord(dir, file, show_col_types = FALSE)
+    read_zancoord(dir, file)
   })
   do.call(rbind, data.list)
 
