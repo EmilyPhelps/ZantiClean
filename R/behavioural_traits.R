@@ -184,6 +184,7 @@ if(missing(frz)){
 
    time <- max(data$TIME_BIN)
 
+   
    tim <- data %>%
      filter(type == "T") %>%
      pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%

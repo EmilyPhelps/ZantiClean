@@ -70,9 +70,10 @@ read_manyzancsv <- function(dir, ID){
 #' @export
 read_zancoord <- function(dir, file){
   timestamp <- str_split(file, "-")[[1]][2] %>% gsub("T", "", .)
-
+  unit <-  str_split(file, "-")[[1]][3] %>% str_extract(string, "Z\\d+")
   data <- read_csv(paste0(dir, file)) %>%
-    mutate(file.timestamp=timestamp)
+    mutate(file.timestamp=timestamp,
+           unit=unit)
   return(data)
 }
 #' read_manyzancoord()
