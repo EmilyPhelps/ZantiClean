@@ -50,12 +50,12 @@ transform_csv <- function(data, ID){
 #' @export
 transform_xy <- function(data){
   X <- data %>%
-    dplyr::select(RUNTIME, file.timestamp, contains("X")) %>%
+    dplyr::select(RUNTIME, file.timestamp, unit, contains("X")) %>%
     pivot_longer(cols=contains("X"), values_to="X", names_to="arena") %>%
     mutate(arena=gsub("X_", "", arena))
 
   Y <- data %>%
-    dplyr::select(RUNTIME, file.timestamp, contains("Y")) %>%
+    dplyr::select(RUNTIME, file.timestamp, unit, contains("Y")) %>%
     pivot_longer(cols=contains("Y"), values_to="Y", names_to="arena") %>%
     mutate(arena=gsub("Y_", "", arena))
 

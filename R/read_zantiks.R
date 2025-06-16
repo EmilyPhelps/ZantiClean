@@ -18,13 +18,17 @@ read_zancsv <- function(file, ID){
   zunit <- lines[grepl("Apparatus", lines)] %>% 
               gsub('.*\"Apparatus\",\"', '', .)  %>%
               gsub('[\\",]', '', .)
+ 
   data <- read.csv(file, skip = start_line - 1)
+  
   data <- data[-nrow(data), ] %>%
-            mutate_all(as.numeric) %>%
-            mutate(file=paste0(file),
-                   file.date=as.Date(date),
-                   file.timestamp=str_replace_all(date, "[^[:alnum:]]", ""),
-                   unit=zunit)
+    mutate(across(everything(), as.numeric)) %>%
+    mutate(
+      file = file,
+      file.date = ymd(substr(gsub("T", "", str_extract(basename(file), "\\d{8}T\\d{6}")), 1, 8)),
+      file.timestamp = gsub("T", "",as.character(str_extract(basename(file), "\\d{8}T\\d{6}"))),
+      unit = zunit
+    )
 
   if (!missing(ID)) {  # Only execute this block if ID is not missing
     if (ID == "Service") {
@@ -70,7 +74,7 @@ read_manyzancsv <- function(dir, ID){
 #' @export
 read_zancoord <- function(dir, file){
   timestamp <- str_split(file, "-")[[1]][2] %>% gsub("T", "", .)
-  unit <-  str_split(file, "-")[[1]][3] %>% str_extract(string, "Z\\d+")
+  unit <-  str_split(file, "-")[[1]][3] %>% str_extract(., "Z\\d+")
   data <- read_csv(paste0(dir, file)) %>%
     mutate(file.timestamp=timestamp,
            unit=unit)

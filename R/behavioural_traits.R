@@ -127,19 +127,18 @@ calc_area <- function(xy, arena.df){
   rel.xy <- left_join(xy, arena.df) %>% #Calculate the relative coordinates due to arena structure
     mutate(rel.X=X-xmin, rel.Y=Y-ymin)
   
-
-  left_join(xy, arena.df,by=c("arena"))
   df_roundwalk <- data_frame(Move = 1:nrow(rel.xy),
                              arena = rel.xy$arena,
                              file.timestamp=rel.xy$file.timestamp,
                              x_round = floor(rel.xy$rel.X),
-                             y_round = floor(rel.xy$rel.Y)) |>  
-    group_by(arena, file.timestamp, x_round, y_round) |> 
+                             y_round = floor(rel.xy$rel.Y),
+                             unit=rel.xy$unit) |>  
+    group_by(arena, file.timestamp, x_round, y_round, unit) |> 
     summarise(score = n())
   
   area_cov <- df_roundwalk %>%
     left_join(., arena.df) %>%
-    group_by(arena, file.timestamp) %>%
+    group_by(arena, file.timestamp, unit) %>%
     summarize(area=round((n()/(width*height))*100,1))
   }
   return(area_cov)
@@ -201,12 +200,13 @@ if(missing(frz)){
  } else {
  free <- freezings(data, frz=frz) #Calculate the freezing information
  
- area <- calc_area(xy, arena.df)
+ area <- calc_area(xy, arena.df) %>% mutate(file.timestamp=substr(file.timestamp, 1, 10))
  
  dis <- data %>%
     filter(type == "D") %>%
     group_by(file.timestamp, arena, unit) %>%
-    mutate(time=max(TIME_BIN)) %>%
+    mutate(time=max(TIME_BIN),
+           file.timestamp=substr(file.timestamp, 1, 10)) %>%
     reframe(track_length=sum(total_distance),
               velocity= sum(total_distance)/time) %>%
    distinct
@@ -218,7 +218,8 @@ if(missing(frz)){
     pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
     group_by(Zone, file.timestamp, arena, unit) %>%
     summarise(Time.in.Zone=sum(TIZ)) %>%
-    mutate(Zone=paste0("time_", Zone)) %>%
+    mutate(Zone=paste0("time_", Zone),
+           file.timestamp=substr(file.timestamp, 1, 10)) %>%
     pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
     ungroup()
 
