@@ -17,7 +17,8 @@ read_zancsv <- function(file, ID){
           gsub("\"", "", .)
   zunit <- lines[grepl("Apparatus", lines)] %>% 
               gsub('.*\"Apparatus\",\"', '', .)  %>%
-              gsub('[\\",]', '', .)
+              gsub('[\\",]', '', .) %>% 
+              gsub("0InfoApparatus", "", .)
  
   data <- read.csv(file, skip = start_line - 1)
   
@@ -36,8 +37,8 @@ read_zancsv <- function(file, ID){
       sub(".*'(.*?)'.*", "\\1", .)
     } else if (ID == "Subject") {
     id <- lines[grepl("Subject", lines)][1] %>%
-      gsub('.*\"Subject Identification\",\"', '', .)  %>%
-      gsub('[\\",]', '', .)
+      gsub('[\\s\\",]', '', .)  %>%
+      gsub('.*Identification', '', .) 
     }
     data <- mutate(data, ID = paste0(id))  # Add ID column to data
   }

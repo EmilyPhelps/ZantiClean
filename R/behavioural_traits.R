@@ -131,14 +131,13 @@ calc_area <- function(xy, arena.df){
                              arena = rel.xy$arena,
                              file.timestamp=rel.xy$file.timestamp,
                              x_round = floor(rel.xy$rel.X),
-                             y_round = floor(rel.xy$rel.Y),
-                             unit=rel.xy$unit) |>  
-    group_by(arena, file.timestamp, x_round, y_round, unit) |> 
+                             y_round = floor(rel.xy$rel.Y)) |>  
+    group_by(arena, file.timestamp, x_round, y_round) |> 
     summarise(score = n())
   
   area_cov <- df_roundwalk %>%
     left_join(., arena.df) %>%
-    group_by(arena, file.timestamp, unit) %>%
+    group_by(arena, file.timestamp) %>%
     summarize(area=round((n()/(width*height))*100,1))
   }
   return(area_cov)
@@ -171,7 +170,19 @@ if(missing(frz)){
  if (ID == TRUE) {
    free <- freezings(data, ID=TRUE, frz=frz) #Calculate the freezing information
    
-   area <- calc_area(xy, arena.df)
+   ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
+   
+   area <- calc_area(xy, arena.df) %>%
+            dplyr::rename(xy.timestamp=file.timestamp) %>%
+     rowwise() %>%
+     mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
+            plus = xy.time + seconds(5),
+            minus = xy.time - seconds(5),
+            file.timestamp = as.character({
+             ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
+             match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
+             if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original
+     dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
    
    dis <- data %>%
      filter(type == "D") %>%
@@ -200,13 +211,24 @@ if(missing(frz)){
  } else {
  free <- freezings(data, frz=frz) #Calculate the freezing information
  
- area <- calc_area(xy, arena.df) %>% mutate(file.timestamp=substr(file.timestamp, 1, 10))
+ ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
+ 
+ area <- calc_area(xy, arena.df) %>%
+   dplyr::rename(xy.timestamp=file.timestamp) %>%
+   rowwise() %>%
+   mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
+          plus = xy.time + seconds(5),
+          minus = xy.time - seconds(5),
+          file.timestamp = as.character({
+            ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
+            match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
+            if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original 
+   dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
  
  dis <- data %>%
     filter(type == "D") %>%
     group_by(file.timestamp, arena, unit) %>%
-    mutate(time=max(TIME_BIN),
-           file.timestamp=substr(file.timestamp, 1, 10)) %>%
+    mutate(time=max(TIME_BIN)) %>%
     reframe(track_length=sum(total_distance),
               velocity= sum(total_distance)/time) %>%
    distinct
@@ -218,8 +240,7 @@ if(missing(frz)){
     pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
     group_by(Zone, file.timestamp, arena, unit) %>%
     summarise(Time.in.Zone=sum(TIZ)) %>%
-    mutate(Zone=paste0("time_", Zone),
-           file.timestamp=substr(file.timestamp, 1, 10)) %>%
+    mutate(Zone=paste0("time_", Zone),) %>%
     pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
     ungroup()
 
