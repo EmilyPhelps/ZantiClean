@@ -20,10 +20,12 @@ stopping_duration <- function(data, ID){
                             NA)
       ) %>%
       filter(!is.na(zero_group)) %>%
-      group_by(file.timestamp, arena, ID, zero_group, unit) %>%
-      summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
+      group_by(file.timestamp, arena, ID, zero_group, unit) 
+    
+    if (nrow(output) != 0) {
+      output <- output %>% summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
       ungroup()
-
+  }
   } else {
     output <- data %>% 
       group_by(file.timestamp, arena, unit) %>%
@@ -34,9 +36,12 @@ stopping_duration <- function(data, ID){
                             NA)
       ) %>%
       filter(!is.na(zero_group)) %>%
-      group_by(file.timestamp, arena, zero_group, unit) %>%
-      summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
-      ungroup()
+      group_by(file.timestamp, arena, zero_group, unit) 
+    
+    if (nrow(output) != 0) {
+      output <- output %>% summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
+        ungroup()
+    }
   }
   
   missing_arenas <- setdiff(unique(data$arena), unique(output$arena))
@@ -176,8 +181,8 @@ if(missing(frz)){
             dplyr::rename(xy.timestamp=file.timestamp) %>%
      rowwise() %>%
      mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
-            plus = xy.time + seconds(5),
-            minus = xy.time - seconds(5),
+            plus = xy.time + seconds(10),
+            minus = xy.time - seconds(10),
             file.timestamp = as.character({
              ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
              match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
@@ -190,10 +195,8 @@ if(missing(frz)){
      mutate(time=max(TIME_BIN)) %>%
      reframe(track_length=sum(total_distance),
              velocity= sum(total_distance)/time) %>%
-     distinct
-
-   time <- max(data$TIME_BIN)
-
+     distinct()
+   
    
    tim <- data %>%
      filter(type == "T") %>%

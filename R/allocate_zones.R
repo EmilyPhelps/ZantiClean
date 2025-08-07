@@ -37,14 +37,16 @@ allocate_zones <- function(XY, zones, arena, start, end, file, nested){
   if(missing(file)){
     file <- NA
   }
-  rel.xy <- left_join(xy, arena) %>%
-                mutate(rel.X=X-xmin, rel.Y=Y-ymin)
-
+  
+  rel.xy <- left_join(XY, arena) %>%
+    mutate(rel.X=as.numeric(X)-as.numeric(xmin),
+           rel.Y=as.numeric(Y)-as.numeric(ymin))
+  
   if(nested == FALSE){
     zoned.xy <- rel.xy %>%
       rowwise() %>%
       mutate(Zone={matching_zone <- zones %>%
-        filter(rel.X >= xmin & rel.X <= xmax & rel.Y >=ymin & rel.Y<= ymax) %>%
+        filter(rel.X >= xmin & rel.X < xmax & rel.Y >=ymin & rel.Y < ymax) %>%
         pull(Zone)  # Extract the matching zone
 
       if(length(matching_zone) > 0) matching_zone else NA_character_
@@ -73,7 +75,7 @@ allocate_zones <- function(XY, zones, arena, start, end, file, nested){
                 group_by(arena) %>% arrange(TIME_BIN) %>%
                 mutate(x.dis=abs(rel.X-lead(rel.X)),
                        y.dis=abs(rel.Y-lead(rel.Y))) %>%
-                group_by(arena, TIME_BIN, Zone, file.timestamp) %>%
+                group_by(arena, TIME_BIN, Zone, file.timestamp, unit) %>%
                 summarize(dis=sqrt(max(x.dis)^2 + max(y.dis)^2),
                           type="D") %>%
                 filter(!is.na(dis)) %>%
@@ -82,7 +84,7 @@ allocate_zones <- function(XY, zones, arena, start, end, file, nested){
 
 
   time <- zoned.xy %>%
-            group_by(arena, Zone, TIME_BIN, file.timestamp) %>%
+            group_by(arena, Zone, TIME_BIN, file.timestamp, unit) %>%
             summarize(time=max(RUNTIME)-min(RUNTIME)) %>%
             mutate(TIME_BIN=as.numeric(gsub("\\)", "", gsub("^.*,", "",
                                                             as.character(TIME_BIN)))),
@@ -119,7 +121,7 @@ allocate_zones <- function(XY, zones, arena, start, end, file, nested){
            file=file) %>%
     filter(TIME_BIN !=0) %>%
     dplyr::select(TIME, TIME_BIN, arena, type,
-                  file.timestamp, file.date, file, contains("Z"))
+                  file.timestamp, file.date, unit, file, contains("Z"))
 
   return(output)
   }

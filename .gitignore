@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 data/
+data/*
 ZantiClean.Rproj
 scriptdev/
 *html
