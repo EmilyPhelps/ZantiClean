@@ -2,130 +2,101 @@
 #' stopping_duration()
 #'
 #'This function estimates the time stopped from the Zantiks csv files.
-#' @param data Zantiks transformed csv
-#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
-#' @returns A dataframe containing duration of each stopping event, e.g. when total distance is 0.
-stopping_duration <- function(data, ID){
-  if(missing(ID)){
-    ID <- FALSE
-  }
-
-  if (ID == TRUE) {
-    output <- data %>% 
-      group_by(file.timestamp, arena, ID, unit) %>%
-      mutate(
-        # Assign group number only to rows where total_distance == 0
-        zero_group = ifelse(total_distance == 0,
-                            cumsum(c(TRUE, diff(total_distance == 0) != 0)) * (total_distance == 0),
-                            NA)
-      ) %>%
-      filter(!is.na(zero_group)) %>%
-      group_by(file.timestamp, arena, ID, zero_group, unit) 
-    
-    if (nrow(output) != 0) {
-      output <- output %>% summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
-      ungroup()
-  }
-  } else {
-    output <- data %>% 
-      group_by(file.timestamp, arena, unit) %>%
-      mutate(
-        # Assign group number only to rows where total_distance == 0
-        zero_group = ifelse(total_distance == 0,
-                            cumsum(c(TRUE, diff(total_distance == 0) != 0)) * (total_distance == 0),
-                            NA)
-      ) %>%
-      filter(!is.na(zero_group)) %>%
-      group_by(file.timestamp, arena, zero_group, unit) 
-    
-    if (nrow(output) != 0) {
-      output <- output %>% summarize(duration=(max(TIME_BIN)-min(TIME_BIN))+1) %>%
-        ungroup()
-    }
+#' @param xy Zantiks transformed coordinate data (XY.csv)
+#' @param thres (optional) The speed under which the animal is assumed to be stopped. 
+#'              This is needed for animals that are swimming, so if you are doing a land animal set to 0.
+#'              Default is 4mm/s based on the guppy threshold. 
+#' @returns A dataframe containing duration of each stopping event.
+stopping_duration <- function(xy, thres){
+  if(missing(thres)){
+    thres <- 4
+    print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
   }
   
-  missing_arenas <- setdiff(unique(data$arena), unique(output$arena))
+  #Estimate speed between two points
+  zero_grouped <- xy %>%
+    group_by(file.timestamp, arena) %>%
+    mutate(x_move = X - lag(X), #Estimate the distance using Pythagoras
+           y_move = Y - lag(Y),
+           distance = sqrt(x_move^2 + y_move^2),
+           time=RUNTIME- lag(RUNTIME), #Estimate the time
+           speed=distance/time,
+           # Assign group number only to rows where speed < thres
+           below_thres = speed <= thres & !is.na(speed),  # TRUE/FALSE flag
+           zero_group = cumsum(below_thres & !lag(below_thres, default = FALSE)),  # increment at each new run start
+           zero_group = ifelse(below_thres, zero_group, NA))
   
-  if(length(missing_arenas) > 0) {
-    for(arena in missing_arenas) {
-      file.timestamp <- output[1,1]
-      ID <- output[1,3]
-      unit <- output[1,5]
-      
-      new_row <- data.frame(arena = arena, 
-                            file.timestamp= file.timestamp, 
-                            ID=ID, zero_group=NA,
-                            unit=unit, duration = 0)
-      # Append the new row to output
-      output <- rbind(output, new_row)
-    }
-  }
+  output <- zero_grouped %>%
+    group_by(file.timestamp, arena, zero_group) %>% 
+    summarize(duration=(max(RUNTIME)-min(RUNTIME))) %>%
+    ungroup()
   
   return(output)
 }
-#'freezings()
-#'
-#' This function estimates whether a stopping is actually a freezing event and
-#' calculates the number of freezing events and the average time spent frozen.
-#' @param data Zantiks transformed csv
-#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
-#' @param frz The number of seconds after which an animal can be considered to give the freezing response.
-#' @returns Summary of the freezing including total number of freezing and average number of freezing.
-freezings <- function(data, ID, frz){
-  if(missing(ID)){
-    ID <- FALSE
+
+#' freezings()
+#' This function calculates the number of freezing events and the average time spent frozen.
+#' 
+#' @param xy Zantiks transformed coordinate data (XY.csv)
+#' @param thres (optional) The speed under which the animal is assumed to be stopped. 
+#'              This is needed for animals that are swimming, so if you are doing a land animal set to 0.
+#'              Default is 4mm/s based on the guppy threshold. 
+#' @returns A dataframe containing the number of freezing events, the mean duration of the freezing events, 
+#'          the sd of the freezing events and the total duration spent frozen.
+
+freezings <- function(xy, thres){
+  if(missing(thres)){
+    thres <- 4
+    print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
   }
+  stops.df <- stopping_duration(xy, thres) %>%
+    group_by(file.timestamp, arena) %>% summarise(
+      n_freezing = n_distinct(zero_group, na.rm = TRUE),
+      mean_freezetime = mean(duration, na.rm=TRUE),
+      sd_freezetime=sd(duration, na.rm=TRUE),
+      .groups = "drop"
+    )
   
-  if(missing(frz)){
-    frz <- 3
-  }
-
-  if (ID == TRUE) {
-    output <- stopping_duration(data, ID=TRUE) %>%
-      ungroup() %>%
-      group_by(file.timestamp, arena, ID, unit) %>%
-      mutate(freeze.event=ifelse(duration >= frz, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
-      summarize(freeze.count=sum(freeze.event),
-                freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
-      mutate(freeze.time=ifelse(is.na(freeze.time), 0, freeze.time))%>% #Replace the na of those with no freezing time with 0
-      ungroup()
-
-  } else {
-    output <- stopping_duration(data) %>%
-      ungroup() %>%
-      group_by(file.timestamp, arena, unit) %>%
-      mutate(freeze.event=ifelse(duration>= frz, 1, 0)) %>% #if stopping time is over 3 seconds consider it a freezing event
-      summarize(freeze.count=sum(freeze.event),
-                freeze.time = mean(duration[freeze.event == 1], na.rm = TRUE)) %>%
-      mutate(freeze.time=ifelse(is.na(freeze.time), 0, freeze.time)) %>% #Replace the na of those with no freezing time with 0
-      ungroup()
-  }
-  return(output)
+  return(stops.df)
 }
+
 #' calc_area()
 #'
 #' This function estimates the proportion of the arena that covered
-#' using the xy coordinates provided by Zantiks. 
+#' using the xy coordinates provided by Zantiks. Either a dataframe containing
+#' arena information should be included or individual height/width of the arena. 
 #'
 #' @param xy Transformed Zantiks coordinates.
-#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
 #' @param arena.df (optional) A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 #'         This should include xmin, xmax, ymin, ymax for each arena.
-#' @return A dataframe containing arena measurements for each individual.
+#' @param width (optional) The width of the trial arena. 
+#' @param height (optional) The height of the trial arena.
+#' @return A dataframe containing area measurements for each individual.
 #' @export
 #' 
-calc_area <- function(xy, arena.df){
+calc_area <- function(xy, arena.df, width, height){
+  if(missing(arena.df) & (missing(width) | missing(height))){
+    print("Need to include either arena.df or height and width of trial arena")
+  }
+  
   if(missing(arena.df)){
-    area_cov <- data_frame(Move = 1:nrow(xy),
+  print("Arena info missing so using explicit width and height")
+    width <- width
+    height <- height
+    df_roundwalk <- data_frame(Move = 1:nrow(xy),
+               arena = xy$arena,
+               file.timestamp=xy$file.timestamp,
                x_round = floor(xy$X),
                y_round = floor(xy$Y)) |>  
-      group_by(x_round, y_round) |> 
-      group_by(x_round, y_round) %>%
-      summarise(score = n(), .groups = "drop") %>%
-      summarise(area = round((n() / (width * height)) * 100, 1))
+      group_by(arena, file.timestamp, x_round, y_round) %>%
+      summarise(score = n())
     
+    area_cov <- df_roundwalk %>%
+      group_by(arena, file.timestamp) %>%
+      summarize(area=round((n()/(width*height))*100,1))
     
   }else{
+  print("Arena info input so estimating width. Give explicit width and remove arena.df if you dont want this")
   width <- arena.df[1,]$xmax- arena.df[1,]$xmin
   height <- arena.df[1,]$ymax-arena.df[1,]$ymin
   
@@ -159,100 +130,82 @@ calc_area <- function(xy, arena.df){
 #' @param arena.df A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 #'         This should include xmin, xmax, ymin, ymax for each arena.
 #' @param ID (optional) A logical vector. If true, the ID will be carried forward.
-#' @param frz (optional) A threshold value after which individuals should be considered to be exhibiting a freeze response. 
+#' @param thres (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
 #' @return A dataframe containing summary behavioural variables
 #' @export
 
-summary_behaviour <- function(data, xy, arena.df, ID, frz){
- if(missing(ID)){
+summary_behaviour <- function(data, xy, arena.df, ID, thres){
+  if(missing(ID)){
     ID <- FALSE
- }
-
-if(missing(frz)){
-    frz <- 3
-}
+  }
   
- if (ID == TRUE) {
-   free <- freezings(data, ID=TRUE, frz=frz) #Calculate the freezing information
-   
-   ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
-   
-   area <- calc_area(xy, arena.df) %>%
-            dplyr::rename(xy.timestamp=file.timestamp) %>%
-     rowwise() %>%
-     mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
-            plus = xy.time + seconds(10),
-            minus = xy.time - seconds(10),
-            file.timestamp = as.character({
+  if(missing(thres)){
+    thres <- 4
+    print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
+  }
+  
+  free <- freezings(xy, thres = thres) #Calculate the freezing information
+  
+  ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
+  
+  area <- calc_area(xy, arena.df) %>%
+    dplyr::rename(xy.timestamp=file.timestamp) %>%
+    rowwise() %>%
+    mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
+           plus = xy.time + seconds(10),
+           minus = xy.time - seconds(10),
+           file.timestamp = as.character({
              ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
              match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
              if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original
-     dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
-   
-   dis <- data %>%
-     filter(type == "D") %>%
-     group_by(file.timestamp, arena, ID, unit) %>%
-     mutate(time=max(TIME_BIN)) %>%
-     reframe(track_length=sum(total_distance),
-             velocity= sum(total_distance)/time) %>%
-     distinct()
-   
-   
-   tim <- data %>%
-     filter(type == "T") %>%
-     pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
-     group_by(Zone, file.timestamp, arena, ID, unit) %>%
-     summarise(Time.in.Zone=sum(TIZ)) %>%
-     mutate(Zone=paste0("time_", Zone)) %>%
-     pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
-     ungroup()
-
-   output <- left_join(dis, tim) %>%
-     left_join(., free) %>%
-     left_join(., area)
-
- } else {
- free <- freezings(data, frz=frz) #Calculate the freezing information
- 
- ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
- 
- area <- calc_area(xy, arena.df) %>%
-   dplyr::rename(xy.timestamp=file.timestamp) %>%
-   rowwise() %>%
-   mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
-          plus = xy.time + seconds(5),
-          minus = xy.time - seconds(5),
-          file.timestamp = as.character({
-            ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
-            match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
-            if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original 
-   dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
- 
- dis <- data %>%
-    filter(type == "D") %>%
-    group_by(file.timestamp, arena, unit) %>%
-    mutate(time=max(TIME_BIN)) %>%
-    reframe(track_length=sum(total_distance),
+    dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
+  
+  if (ID == TRUE) {
+    dis <- data %>%
+      filter(type == "D") %>%
+      group_by(file.timestamp, arena, ID, unit) %>%
+      mutate(time=max(TIME_BIN)) %>%
+      reframe(track_length=sum(total_distance),
               velocity= sum(total_distance)/time) %>%
-   distinct
-
- time <- max(data$TIME_BIN)
-
- tim <- data %>%
-    filter(type == "T") %>%
-    pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
-    group_by(Zone, file.timestamp, arena, unit) %>%
-    summarise(Time.in.Zone=sum(TIZ)) %>%
-    mutate(Zone=paste0("time_", Zone),) %>%
-    pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
-    ungroup()
-
- output <- left_join(dis, tim) %>%
-   left_join(., free) %>%
-   left_join(., area)
- }
-return(output)
+      distinct()
+    
+    
+    tim <- data %>%
+      filter(type == "T") %>%
+      pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
+      group_by(Zone, file.timestamp, arena, ID, unit) %>%
+      summarise(Time.in.Zone=sum(TIZ)) %>%
+      mutate(Zone=paste0("time_", Zone)) %>%
+      pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
+      ungroup()
+    
+  } else {
+    dis <- data %>%
+      filter(type == "D") %>%
+      group_by(file.timestamp, arena, unit) %>%
+      mutate(time=max(TIME_BIN)) %>%
+      reframe(track_length=sum(total_distance),
+              velocity= sum(total_distance)/time) %>%
+      distinct
+    
+    time <- max(data$TIME_BIN)
+    
+    tim <- data %>%
+      filter(type == "T") %>%
+      pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
+      group_by(Zone, file.timestamp, arena, unit) %>%
+      summarise(Time.in.Zone=sum(TIZ)) %>%
+      mutate(Zone=paste0("time_", Zone),) %>%
+      pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
+      ungroup()
+    
+  }
+  output <- left_join(dis, tim) %>%
+    left_join(., free) %>%
+    left_join(., area)
+  return(output)
 }
+
 #' split_behaviour()
 #'
 #' This function estimates the behaviour variables accounting
@@ -261,43 +214,47 @@ return(output)
 #'
 #' @param data Zantiks transformed csv.
 #' @param time Time in seconds, in which to divide data by.
-#' @return A dataframe containing summary behavioural variables
+#' @param ID (optional) A logical vector. If true, the ID will be carried forward.
+#' @param thres (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
+#' @return A dataframe containing summary behavioral variables
 #' @export
-split_behaviour <- function(data, time, ID, frz){
+split_behaviour <- function(data, time, ID, thres){
   if(missing(ID)){
     ID <- FALSE
   }
   
-  if(missing(frz)){
-    frz <- 3
+  if(missing(thres)){
+   thres <- 3
   }
   
   if (ID == TRUE) {
     pre <- data %>%
       filter(TIME_BIN<=time) %>%
-      summary_behaviour(., ID=TRUE, frz=frz) %>%
+      summary_behaviour(., ID=TRUE, thres=thres) %>%
       mutate(timesplit=paste0("pre", time)) %>%
       rename_with(~paste0("pre", time, .),
-                  c(track_length, velocity, freeze.count, freeze.time,
-                    time_Z1, time_Z2, time_Z3, time_Z4))
+                  !c(file.timestamp, arena, ID, unit))
 
     post <- data %>%
       filter(TIME_BIN>=time) %>%
       summary_behaviour(., ID=TRUE, frz=frz) %>%
       mutate(timesplit=paste0("post", time)) %>%
       rename_with(~paste0("post", time, .),
-                  c(track_length, velocity, freeze.count, freeze.time,
-                    time_Z1, time_Z2, time_Z3, time_Z4))
+                  !c(file.timestamp, arena, ID, unit))
   } else {
   pre <- data %>%
     filter(TIME_BIN<=time) %>%
     summary_behaviour(., frz=frz) %>%
-    mutate(timesplit=paste0("pre", time)) 
+    mutate(timesplit=paste0("pre", time)) %>%
+    rename_with(~paste0("post", time, .),
+                !c(file.timestamp, arena, unit))
 
   post <- data %>%
     filter(TIME_BIN>=time) %>%
     summary_behaviour(., frz=frz) %>%
-    mutate(timesplit=paste0("post", time))
+    mutate(timesplit=paste0("post", time))%>%
+    rename_with(~paste0("post", time, .),
+                !c(file.timestamp, arena, unit))
 
   }
   output <- rbind(pre, post)
