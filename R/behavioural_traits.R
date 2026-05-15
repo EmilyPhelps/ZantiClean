@@ -161,11 +161,50 @@ summary_behaviour <- function(data, xy, arena.df, ID, thres){
     dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
   
   if (ID == TRUE) {
-    dis <- data %>%
-      filter(type == "D") %>%
-      group_by(file.timestamp, arena, ID, unit) %>%
-      mutate(time=max(TIME_BIN)) %>%
-      reframe(track_length=sum(total_distance),
+   dis <- data %>%
+     filter(type == "D") %>%
+     group_by(file.timestamp, arena, ID, unit) %>%
+     mutate(time=max(TIME_BIN)) %>%
+     reframe(track_length=sum(total_distance),
+             velocity= sum(total_distance)/time) %>%
+     distinct()
+   
+   
+   tim <- data %>%
+     filter(type == "T") %>%
+     pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
+     group_by(Zone, file.timestamp, arena, ID, unit) %>%
+     summarise(Time.in.Zone=sum(TIZ)) %>%
+     mutate(Zone=paste0("time_", Zone)) %>%
+     pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
+     ungroup()
+
+   output <- left_join(dis, tim) %>%
+     left_join(., free) %>%
+     left_join(., area)
+
+ } else {
+ free <- freezings(data, frz=frz) #Calculate the freezing information
+ 
+ ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
+ 
+ area <- calc_area(xy, arena.df) %>%
+   dplyr::rename(xy.timestamp=file.timestamp) %>%
+   rowwise() %>%
+   mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
+          plus = xy.time + seconds(5),
+          minus = xy.time - seconds(5),
+          file.timestamp = as.character({
+            ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC") # Convert all ts timestamps to datetime
+            match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
+            if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original 
+   dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
+ 
+ dis <- data %>%
+    filter(type == "D") %>%
+    group_by(file.timestamp, arena, unit) %>%
+    mutate(time=max(TIME_BIN)) %>%
+    reframe(track_length=sum(total_distance),
               velocity= sum(total_distance)/time) %>%
       distinct()
     
