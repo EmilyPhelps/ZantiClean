@@ -29,6 +29,7 @@ stopping_duration <- function(xy, thres){
   output <- zero_grouped %>%
     group_by(file.timestamp, arena, zero_group) %>% 
     summarize(duration=(max(RUNTIME)-min(RUNTIME))) %>%
+    mutate(duration = ifelse(is.na(zero_group), NA, duration)) %>%
     ungroup()
   
   return(output)
@@ -49,11 +50,13 @@ freezings <- function(xy, thres){
     thres <- 4
     print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
   }
+  
   stops.df <- stopping_duration(xy, thres) %>%
     group_by(file.timestamp, arena) %>% summarise(
       n_freezing = n_distinct(zero_group, na.rm = TRUE),
       mean_freezetime = mean(duration, na.rm=TRUE),
       sd_freezetime=sd(duration, na.rm=TRUE),
+      total_freezetime=sum(duration),
       .groups = "drop"
     )
   
@@ -140,13 +143,23 @@ summary_behaviour <- function(data, xy, arena.df, ID, thres){
   }
   
   if(missing(thres)){
-    thres <- 4
-    print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
+      thres <- 4
+      print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
   }
   
-  free <- freezings(xy, thres = thres) #Calculate the freezing information
-  
   ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
+  
+  free <- freezings(xy, thres = thres) %>%
+    dplyr::rename(xy.timestamp=file.timestamp) %>%
+    rowwise() %>%
+    mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
+           plus = xy.time + seconds(10),
+           minus = xy.time - seconds(10),
+           file.timestamp = as.character({
+             ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
+             match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
+             if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original
+    dplyr::select(!c(minus, plus, xy.time)) #Calculate the freezing information
   
   area <- calc_area(xy, arena.df) %>%
     dplyr::rename(xy.timestamp=file.timestamp) %>%
@@ -161,16 +174,35 @@ summary_behaviour <- function(data, xy, arena.df, ID, thres){
     dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
   
   if (ID == TRUE) {
-    dis <- data %>%
-      filter(type == "D") %>%
-      group_by(file.timestamp, arena, ID, unit) %>%
-      mutate(time=max(TIME_BIN)) %>%
-      reframe(track_length=sum(total_distance),
+   dis <- data %>%
+     filter(type == "D") %>%
+     group_by(file.timestamp, arena, ID, unit) %>%
+     mutate(time=max(TIME_BIN)) %>%
+     reframe(track_length=sum(total_distance),
+             velocity= sum(total_distance)/time) %>%
+     distinct()
+   
+   tim <- data %>%
+     filter(type == "T") %>%
+     pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
+     group_by(Zone, file.timestamp, arena, ID, unit) %>%
+     summarise(Time.in.Zone=sum(TIZ)) %>%
+     mutate(Zone=paste0("time_", Zone)) %>%
+     pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
+     ungroup()
+
+  } else {
+ 
+  dis <- data %>%
+    filter(type == "D") %>%
+    group_by(file.timestamp, arena, unit) %>%
+    mutate(time=max(TIME_BIN)) %>%
+    reframe(track_length=sum(total_distance),
               velocity= sum(total_distance)/time) %>%
       distinct()
     
     
-    tim <- data %>%
+  tim <- data %>%
       filter(type == "T") %>%
       pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
       group_by(Zone, file.timestamp, arena, ID, unit) %>%
@@ -179,30 +211,12 @@ summary_behaviour <- function(data, xy, arena.df, ID, thres){
       pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
       ungroup()
     
-  } else {
-    dis <- data %>%
-      filter(type == "D") %>%
-      group_by(file.timestamp, arena, unit) %>%
-      mutate(time=max(TIME_BIN)) %>%
-      reframe(track_length=sum(total_distance),
-              velocity= sum(total_distance)/time) %>%
-      distinct
-    
-    time <- max(data$TIME_BIN)
-    
-    tim <- data %>%
-      filter(type == "T") %>%
-      pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
-      group_by(Zone, file.timestamp, arena, unit) %>%
-      summarise(Time.in.Zone=sum(TIZ)) %>%
-      mutate(Zone=paste0("time_", Zone),) %>%
-      pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
-      ungroup()
-    
-  }
+  } 
+  
   output <- left_join(dis, tim) %>%
     left_join(., free) %>%
     left_join(., area)
+  
   return(output)
 }
 

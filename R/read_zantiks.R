@@ -84,6 +84,7 @@ read_zancoord <- function(dir, file){
            unit=unit)
   return(data)
 }
+
 #' read_manyzancoord()
 #'
 #' This function loads in a many .coord output files from Zantiks.
