@@ -4,7 +4,7 @@
 \alias{calc_area}
 \title{calc_area()}
 \usage{
-calc_area(xy, arena.df)
+calc_area(xy, arena.df, width, height)
 }
 \arguments{
 \item{xy}{Transformed Zantiks coordinates.}
@@ -12,12 +12,15 @@ calc_area(xy, arena.df)
 \item{arena.df}{(optional) A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 This should include xmin, xmax, ymin, ymax for each arena.}
 
-\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
+\item{width}{(optional) The width of the trial arena.}
+
+\item{height}{(optional) The height of the trial arena.}
 }
 \value{
-A dataframe containing arena measurements for each individual.
+A dataframe containing area measurements for each individual.
 }
 \description{
 This function estimates the proportion of the arena that covered
-using the xy coordinates provided by Zantiks.
+using the xy coordinates provided by Zantiks. Either a dataframe containing
+arena information should be included or individual height/width of the arena.
 }

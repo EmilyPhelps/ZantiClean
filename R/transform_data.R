@@ -14,7 +14,6 @@ transform_csv <- function(data, ID){
   }
 
   if (ID == TRUE){
-
     output <- data %>% dplyr::select(!contains("TOTAL_DISTANCE")) %>%
       melt(., id=c("TIME", "TIME_BIN", "file", "file.timestamp", "file.date", "ID", "unit")) %>%
       mutate(arena=substr(variable, 1, 2),
@@ -26,7 +25,6 @@ transform_csv <- function(data, ID){
       mutate(total_distance=ifelse(type == "D", rowSums(across(contains("Z"))), NA))
 
  } else {
-
    output<- data %>% dplyr::select(!contains("TOTAL_DISTANCE")) %>%
       melt(., id=c("TIME", "TIME_BIN", "file","file.timestamp", "file.date", "unit")) %>%
       mutate(arena=substr(variable, 1, 2),
