@@ -39,7 +39,8 @@ stopping_duration <- function(xy, speed){
     right_join(sum, by = c("file.timestamp", "arena")) %>% 
     complete(file.timestamp, arena) %>%
   ungroup()
-  return(output)
+
+    return(output)
 }
 
 #' freezings()
