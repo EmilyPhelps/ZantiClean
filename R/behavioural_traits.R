@@ -60,7 +60,7 @@ freezings <- function(xy, speed, time){
   }
   
   if(missing(time)){
-    speed <- 2.5
+    time <- 2.5
     print("default time set to 2.5s")
   }
   
@@ -297,4 +297,3 @@ split_behaviour <- function(data, time, ID, thres){
   output <- rbind(pre, post)
   return(output)
 }
-
