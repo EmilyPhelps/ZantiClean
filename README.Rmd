@@ -61,7 +61,7 @@ csv <- read_zancsv("path/to/your/zantiks.csv", ID="Service")
 csv <- read_zancsv("path/to/your/zantiks.csv", ID="Subject")
 ```
 
-Often you won't have just one file to read in. In this case you can use `read_manyzancsv()`. Here you must use an ID to help identify each individual. 
+Often you won't have just one file to read in. In this case you can use `read_manyzancsv()`. Here you must use an ID to help identify each individual.
 
 *NB: You could do some wrangling in bash to change the Service or Subject line to add an ID after the experiment if you havent already. e.g.* `grep "Service:" "Service:SomeInformation"`
 
@@ -79,7 +79,24 @@ Next we need to transform the data so that each line represents a single individ
 trans <- transform_csv(csvs, ID=TRUE)
 ```
 
-Now we want to get some behavioural information from our data. To do this we can use the `summary_behaviour()` function.
+We now need to read in the coordinate data so we can estimate freezing and area covered. You can do this in two steps but its all tidyverse so should be pipe-able
+
+```{r}
+xy <- read_manyzancoord("path/to/directory/containing/xy/") %>%    
+        transform_xy(.)
+```
+
+If your XY files are named with the unit e.g. our guppy files have the structure: `G_final_asset_2025_Z3-20250714T121951-XY_data_Z3.csv`, where the unit is Z3 and included before a "-" the XY csv reading will work for you. If not- sorry I'll make it more inclusive when I get the chance.
+
+Temporarily though you could do something like this to fix it.
+```{r}
+list.files("path/to/directory/containing/xy/") %>% 
+  as.tibble() %>% 
+  
+```
+
+
+Now we want to get some behavioral information from our data. To do this we can use the `summary_behaviour()` function.
 
 ```{r}
 data <- summary_behaviour(trans)
@@ -100,6 +117,7 @@ What is considered freezing might be different in different species. To change f
 ```{r}
 summary_behaviour(trans, ID=FALSE, frz=10)
 ```
+
 However, sometimes you want to look at pre and post a stimulus or change in environment. E.g. if turned the lights off after 240 seconds.To get these estimates for before and after an event we can do
 
 ```{r}
@@ -111,6 +129,7 @@ Equally you can change the freezing time here
 ```{r}
 split_behaviour(data=trans, time = 240, frz=5)
 ```
+
 ## Looking at XY data
 
 Sometimes we need a quick look the overall movement of the individual. To do this we can read in our XY coordinates.
@@ -151,17 +170,19 @@ This code is pretty flexible because under the hood its just ggplot. So you can 
           panel.border = element_rect(colour = "#333333", fill=NA, linewidth=1))
 ```
 
-If you want to look at what regions are being used the most by an individual you can use the function `density_plot()`. 
+If you want to look at what regions are being used the most by an individual you can use the function `density_plot()`.
+
 ```{r}
 density_plot(XY, track=TRUE)
 ```
 
-Inclusion of the track is optional but is `TRUE` by default. 
+Inclusion of the track is optional but is `TRUE` by default.
 
-Here is a plot I made using this function. 
+Here is a plot I made using this function.
+
 <center>![](images/density_track.png){width="50%"}</center>
 
-Similarly to the one above, its just ggplot so can be altered to change colour and theme. 
+Similarly to the one above, its just ggplot so can be altered to change colour and theme.
 
 ```{r}
  plot <- ggplot(data, aes(x=X, y=Y)) +
@@ -174,6 +195,7 @@ Similarly to the one above, its just ggplot so can be altered to change colour a
       theme_void() +
       theme(legend.position="none")
 ```
+
 ## Changed your mind about experimental design?
 
 Obviously it's not ideal to change what you want to look at after the experiment but the XY coordinates recorded by Zantiks allows for this. The `allocate_zones()` function is written to allocate points to zones and create a Zantiks .csv style dataframe from this data. This is not for use in studies where Zones have built in differences e.g. tests of scototaxis. However, there might be some use cases, e.g. looking for finer scale inferences within existing zones, or changing zone size in open field trials.

@@ -4,19 +4,19 @@
 \alias{freezings}
 \title{freezings()}
 \usage{
-freezings(data, ID, frz)
+freezings(xy, thres)
 }
 \arguments{
-\item{data}{Zantiks transformed csv}
+\item{xy}{Zantiks transformed coordinate data (XY.csv)}
 
-\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
-
-\item{frz}{The number of seconds after which an animal can be considered to give the freezing response.}
+\item{thres}{(optional) The speed under which the animal is assumed to be stopped.
+This is needed for animals that are swimming, so if you are doing a land animal set to 0.
+Default is 4mm/s based on the guppy threshold.}
 }
 \value{
-Summary of the freezing including total number of freezing and average number of freezing.
+A dataframe containing the number of freezing events, the mean duration of the freezing events (seconds),
+the sd of the freezing events (seconds) and the total duration spent frozen (seconds).
 }
 \description{
-This function estimates whether a stopping is actually a freezing event and
-calculates the number of freezing events and the average time spent frozen.
+This function calculates the number of freezing events and the average time spent frozen.
 }

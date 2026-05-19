@@ -3,19 +3,21 @@
 #'
 #'This function estimates the time stopped from the Zantiks csv files.
 #' @param xy Zantiks transformed coordinate data (XY.csv)
-#' @param thres (optional) The speed under which the animal is assumed to be stopped. 
+#' @param speed (optional) The speed under which the animal is assumed to be stopped. 
 #'              This is needed for animals that are swimming, so if you are doing a land animal set to 0.
-#'              Default is 4mm/s based on the guppy threshold. 
+#'              Default is 4cm/s based on the guppy threshold. 
 #' @returns A dataframe containing duration of each stopping event.
-stopping_duration <- function(xy, thres){
-  if(missing(thres)){
-    thres <- 4
-    print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
+stopping_duration <- function(xy, speed){
+  if(missing(speed)){
+    speed <- 40
+    print("default speed set to 4cm/s- the threshold can be set to if animal is not likely to drift/float")
   }
   
   #Estimate speed between two points
   zero_grouped <- xy %>%
+    ungroup() %>% 
     group_by(file.timestamp, arena) %>%
+    filter(!(is.na(X)| is.na(Y))) %>% #Remove lines with missing coordinates. 
     mutate(x_move = X - lag(X), #Estimate the distance using Pythagoras
            y_move = Y - lag(Y),
            distance = sqrt(x_move^2 + y_move^2),
@@ -26,41 +28,60 @@ stopping_duration <- function(xy, thres){
            zero_group = cumsum(below_thres & !lag(below_thres, default = FALSE)),  # increment at each new run start
            zero_group = ifelse(below_thres, zero_group, NA))
   
-  output <- zero_grouped %>%
+  sum <- zero_grouped %>%
     group_by(file.timestamp, arena, zero_group) %>% 
     summarize(duration=(max(RUNTIME)-min(RUNTIME))) %>%
-    mutate(duration = ifelse(is.na(zero_group), NA, duration)) %>%
-    ungroup()
+    ungroup() %>%
+    filter(!is.na(zero_group))
+  
+  output <- xy %>% #This code adds in missing individuals and sets their area to NA
+    distinct(file.timestamp, arena) %>% 
+    right_join(sum, by = c("file.timestamp", "arena")) %>% 
+    complete(file.timestamp, arena)
   
   return(output)
 }
 
 #' freezings()
+#' 
 #' This function calculates the number of freezing events and the average time spent frozen.
 #' 
 #' @param xy Zantiks transformed coordinate data (XY.csv)
-#' @param thres (optional) The speed under which the animal is assumed to be stopped. 
+#' @param speed (optional) The speed under which the animal is assumed to be stopped. 
 #'              This is needed for animals that are swimming, so if you are doing a land animal set to 0.
-#'              Default is 4mm/s based on the guppy threshold. 
-#' @returns A dataframe containing the number of freezing events, the mean duration of the freezing events, 
-#'          the sd of the freezing events and the total duration spent frozen.
-
-freezings <- function(xy, thres){
-  if(missing(thres)){
-    thres <- 4
-    print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
+#'              Default is 4cm/s based on the guppy threshold. 
+#' @param time (optional) the time for which a freeze can be considered a freeze. 
+#' @returns A dataframe containing the number of freezing events, the mean duration of the freezing events (seconds), 
+#'          the sd of the freezing events (seconds) and the total duration spent frozen (seconds).
+freezings <- function(xy, speed, time){
+  if(missing(speed)){
+    speed <- 40
+    print("default speed set to 4cm/s- the threshold can be set to 0 if animal is not likely to drift/float")
   }
   
-  stops.df <- stopping_duration(xy, thres) %>%
-    group_by(file.timestamp, arena) %>% summarise(
+  if(missing(time)){
+    speed <- 2.5
+    print("default time set to 2.5s")
+  }
+  
+  stops.df <- stopping_duration(xy, speed) %>%
+    filter(duration >= time) %>%
+    group_by(file.timestamp, arena) %>%
+    summarise(
       n_freezing = n_distinct(zero_group, na.rm = TRUE),
       mean_freezetime = mean(duration, na.rm=TRUE),
       sd_freezetime=sd(duration, na.rm=TRUE),
-      total_freezetime=sum(duration),
+      total_freezetime=sum(duration, na.rm=TRUE),
       .groups = "drop"
     )
   
-  return(stops.df)
+  output <- xy %>% #This code adds in missing individuals and sets their area to NA
+    distinct(file.timestamp, arena) %>% 
+    right_join(stops.df, by = c("file.timestamp", "arena")) %>% 
+    complete(file.timestamp, arena) %>%
+    mutate(n_freezing=replace_na(n_freezing, 0),
+           total_freezetime=replace_na(total_freezetime, 0))
+  return(output)
 }
 
 #' calc_area()
@@ -76,7 +97,6 @@ freezings <- function(xy, thres){
 #' @param height (optional) The height of the trial arena.
 #' @return A dataframe containing area measurements for each individual.
 #' @export
-#' 
 calc_area <- function(xy, arena.df, width, height){
   if(missing(arena.df) & (missing(width) | missing(height))){
     print("Need to include either arena.df or height and width of trial arena")
@@ -92,11 +112,8 @@ calc_area <- function(xy, arena.df, width, height){
                x_round = floor(xy$X),
                y_round = floor(xy$Y)) |>  
       group_by(arena, file.timestamp, x_round, y_round) %>%
-      summarise(score = n())
-    
-    area_cov <- df_roundwalk %>%
-      group_by(arena, file.timestamp) %>%
-      summarize(area=round((n()/(width*height))*100,1))
+      filter(!(is.na(x_round)| is.na(y_round))) %>% #Remove lines with missing coordinates. 
+      summarise(score = n()) 
     
   }else{
   print("Arena info input so estimating width. Give explicit width and remove arena.df if you dont want this")
@@ -113,13 +130,20 @@ calc_area <- function(xy, arena.df, width, height){
                              y_round = floor(rel.xy$rel.Y)) |>  
     group_by(arena, file.timestamp, x_round, y_round) |> 
     summarise(score = n())
-  
-  area_cov <- df_roundwalk %>%
+ 
+  }
+ 
+ area_cov <- df_roundwalk %>%
     left_join(., arena.df) %>%
     group_by(arena, file.timestamp) %>%
     summarize(area=round((n()/(width*height))*100,1))
-  }
-  return(area_cov)
+ 
+ output <- xy %>% #This code adds in missing indiviuals and sets their area to NA
+   distinct(file.timestamp, arena) %>% 
+   right_join(area_cov, by = c("file.timestamp", "arena")) %>% 
+   complete(file.timestamp, arena)
+  
+ return(output)
 }
 #' summary_behaviour()
 #'
@@ -136,7 +160,6 @@ calc_area <- function(xy, arena.df, width, height){
 #' @param thres (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
 #' @return A dataframe containing summary behavioural variables
 #' @export
-
 summary_behaviour <- function(data, xy, arena.df, ID, thres){
   if(missing(ID)){
     ID <- FALSE

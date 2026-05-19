@@ -4,15 +4,19 @@
 \alias{split_behaviour}
 \title{split_behaviour()}
 \usage{
-split_behaviour(data, time, ID, frz)
+split_behaviour(data, time, ID, thres)
 }
 \arguments{
 \item{data}{Zantiks transformed csv.}
 
 \item{time}{Time in seconds, in which to divide data by.}
+
+\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
+
+\item{thres}{(optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response.}
 }
 \value{
-A dataframe containing summary behavioural variables
+A dataframe containing summary behavioral variables
 }
 \description{
 This function estimates the behaviour variables accounting

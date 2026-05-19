@@ -4,15 +4,17 @@
 \alias{stopping_duration}
 \title{stopping_duration()}
 \usage{
-stopping_duration(data, ID)
+stopping_duration(xy, speed)
 }
 \arguments{
-\item{data}{Zantiks transformed csv}
+\item{xy}{Zantiks transformed coordinate data (XY.csv)}
 
-\item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
+\item{speed}{(optional) The speed under which the animal is assumed to be stopped.
+This is needed for animals that are swimming, so if you are doing a land animal set to 0.
+Default is 4cm/s based on the guppy threshold.}
 }
 \value{
-A dataframe containing duration of each stopping event, e.g. when total distance is 0.
+A dataframe containing duration of each stopping event.
 }
 \description{
 This function estimates the time stopped from the Zantiks csv files.
