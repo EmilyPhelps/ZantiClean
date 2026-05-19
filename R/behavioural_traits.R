@@ -15,7 +15,7 @@ stopping_duration <- function(xy, speed){
   
   #Estimate speed between two points
   zero_grouped <- xy %>%
-    ungroup() %>% 
+     
     group_by(file.timestamp, arena) %>%
     filter(!(is.na(X)| is.na(Y))) %>% #Remove lines with missing coordinates. 
     mutate(x_move = X - lag(X), #Estimate the distance using Pythagoras
@@ -37,8 +37,8 @@ stopping_duration <- function(xy, speed){
   output <- xy %>% #This code adds in missing individuals and sets their area to NA
     distinct(file.timestamp, arena) %>% 
     right_join(sum, by = c("file.timestamp", "arena")) %>% 
-    complete(file.timestamp, arena)
-  
+    complete(file.timestamp, arena) %>%
+  ungroup()
   return(output)
 }
 
@@ -60,7 +60,7 @@ freezings <- function(xy, speed, time){
   }
   
   if(missing(time)){
-    speed <- 2.5
+    time <- 2.5
     print("default time set to 2.5s")
   }
   
@@ -77,10 +77,11 @@ freezings <- function(xy, speed, time){
   
   output <- xy %>% #This code adds in missing individuals and sets their area to NA
     distinct(file.timestamp, arena) %>% 
-    right_join(stops.df, by = c("file.timestamp", "arena")) %>% 
+    left_join(stops.df, by = c("file.timestamp", "arena")) %>% 
     complete(file.timestamp, arena) %>%
     mutate(n_freezing=replace_na(n_freezing, 0),
-           total_freezetime=replace_na(total_freezetime, 0))
+           total_freezetime=replace_na(total_freezetime, 0)) 
+  
   return(output)
 }
 
@@ -157,22 +158,28 @@ calc_area <- function(xy, arena.df, width, height){
 #' @param arena.df A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
 #'         This should include xmin, xmax, ymin, ymax for each arena.
 #' @param ID (optional) A logical vector. If true, the ID will be carried forward.
-#' @param thres (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
+#' @param speed (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
+#' @param time (optional) the time for which a freeze can be considered a freeze. 
 #' @return A dataframe containing summary behavioural variables
 #' @export
-summary_behaviour <- function(data, xy, arena.df, ID, thres){
+summary_behaviour <- function(data, xy, arena.df, ID, speed, time){
   if(missing(ID)){
     ID <- FALSE
   }
   
-  if(missing(thres)){
-      thres <- 4
-      print("default speed set to 4mm/s- the threshold can be set to if animal is not likely to drift/float")
+  if(missing(speed)){
+      thres <- 40
+      print("default speed set to 4cm/s- the threshold can be set to if animal is not likely to drift/float")
+  }
+  
+  if(missing(time)){
+    thres <- 2.5
+    print("default speed set to 2.5")
   }
   
   ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
   
-  free <- freezings(xy, thres = thres) %>%
+  free <- freezings(xy, speed, time) %>%
     dplyr::rename(xy.timestamp=file.timestamp) %>%
     rowwise() %>%
     mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
@@ -182,7 +189,7 @@ summary_behaviour <- function(data, xy, arena.df, ID, thres){
              ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
              match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
              if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original
-    dplyr::select(!c(minus, plus, xy.time)) #Calculate the freezing information
+    dplyr::select(!c(minus, plus, xy.time, xy.timestamp)) #Calculate the freezing information
   
   area <- calc_area(xy, arena.df) %>%
     dplyr::rename(xy.timestamp=file.timestamp) %>%
@@ -252,18 +259,25 @@ summary_behaviour <- function(data, xy, arena.df, ID, thres){
 #' @param data Zantiks transformed csv.
 #' @param time Time in seconds, in which to divide data by.
 #' @param ID (optional) A logical vector. If true, the ID will be carried forward.
-#' @param thres (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
-#' @return A dataframe containing summary behavioral variables
+#' @param speed (optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response. 
+#' @param time.thres (optional) the time for which a freeze can be considered a freeze. 
+#' @return A dataframe containing summary behavioural variables
 #' @export
-split_behaviour <- function(data, time, ID, thres){
-  if(missing(ID)){
+split_behaviour <- function(data, time, ID, speed, time.thres){  
+ if(missing(ID)){
     ID <- FALSE
   }
   
-  if(missing(thres)){
-   thres <- 3
+  if(missing(speed)){
+      thres <- 40
+      print("default speed set to 4cm/s- the threshold can be set to if animal is not likely to drift/float")
   }
   
+  if(missing(time.thres)){
+    thres <- 2.5
+    print("default speed set to 2.5")
+  }
+
   if (ID == TRUE) {
     pre <- data %>%
       filter(TIME_BIN<=time) %>%
@@ -297,4 +311,3 @@ split_behaviour <- function(data, time, ID, thres){
   output <- rbind(pre, post)
   return(output)
 }
-

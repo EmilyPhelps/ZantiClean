@@ -4,7 +4,7 @@
 \alias{summary_behaviour}
 \title{summary_behaviour()}
 \usage{
-summary_behaviour(data, xy, arena.df, ID, thres)
+summary_behaviour(data, xy, arena.df, ID, speed, time)
 }
 \arguments{
 \item{data}{Zantiks transformed csv}
@@ -16,7 +16,9 @@ This should include xmin, xmax, ymin, ymax for each arena.}
 
 \item{ID}{(optional) A logical vector. If true, the ID will be carried forward.}
 
-\item{thres}{(optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response.}
+\item{speed}{(optional) A threshold speed (mm/s) value after which individuals should be considered to be exhibiting a freeze response.}
+
+\item{time}{(optional) the time for which a freeze can be considered a freeze.}
 }
 \value{
 A dataframe containing summary behavioural variables

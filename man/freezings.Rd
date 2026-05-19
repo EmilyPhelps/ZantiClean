@@ -4,14 +4,16 @@
 \alias{freezings}
 \title{freezings()}
 \usage{
-freezings(xy, thres)
+freezings(xy, speed, time)
 }
 \arguments{
 \item{xy}{Zantiks transformed coordinate data (XY.csv)}
 
-\item{thres}{(optional) The speed under which the animal is assumed to be stopped.
+\item{speed}{(optional) The speed under which the animal is assumed to be stopped.
 This is needed for animals that are swimming, so if you are doing a land animal set to 0.
-Default is 4mm/s based on the guppy threshold.}
+Default is 4cm/s based on the guppy threshold.}
+
+\item{time}{(optional) the time for which a freeze can be considered a freeze.}
 }
 \value{
 A dataframe containing the number of freezing events, the mean duration of the freezing events (seconds),
