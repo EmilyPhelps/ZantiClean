@@ -58,12 +58,19 @@ read_zancsv <- function(file, ID){
 #'           Either "Service" or "Subject".
 #' @export
 read_manyzancsv <- function(dir, ID){
-  files <- list.files(dir, full.names=TRUE)
-  data.list <- lapply(files, function(file){
-    read_zancsv(file, ID=ID)
-  })
+ 
+   if (missing(ID)) {
+    files <- list.files(dir, full.names=TRUE)
+    data.list <- lapply(files, function(file){
+      read_zancsv(file)})
+  } else {
+   files <- list.files(dir, full.names=TRUE)
+   data.list <- lapply(files, function(file){
+        read_zancsv(file, ID=ID)})
+  }
+  
+  
   do.call(rbind, data.list)
-
 }
 #' read_zancoord()
 #'
@@ -71,18 +78,20 @@ read_manyzancsv <- function(dir, ID){
 #'
 #' @param file Name of file to the coordinate file to be imported
 #' @param dir Directory containing the coordinate file to be imported
+#' @param units (optional) A vector containing the unit names to extract. e.g. "Z1" "Z2" "Z3" or "101" etc.
 #' @return A dataframe containing the coord data
 #' @export
-read_zancoord <- function(dir, file){
+read_zancoord <- function(dir, file, units){
   timestamp <- str_split(file, "-")[[1]][2] %>% gsub("T", "", .)
-  #unit <-  str_split(file, "-")[[1]][1] %>% 
-  #  stri_reverse(.) %>% 
-  #  substr(1,2) %>% 
-  #  stri_reverse(.)
+  if(missing(units)) {
+    data <- read_csv(paste0(dir, file)) %>%
+      mutate(file.timestamp=timestamp)
+  } else {
+  unit <-  list.files(dir) %>% 
+    str_extract(., paste(units, collapse = "|"))
   data <- read_csv(paste0(dir, file)) %>%
-    mutate(file.timestamp=timestamp#,
-           #unit=unit
-           )
+    mutate(file.timestamp=timestamp,
+           unit=unit)}
   return(data)
 }
 
@@ -91,13 +100,20 @@ read_zancoord <- function(dir, file){
 #' This function loads in a many .coord output files from Zantiks.
 #'
 #' @param dir Directory containing the coordinate files to be imported
+#' @param units A vector containing the unit names to extract. e.g. "Z1" "Z2" "Z3" or "101" etc.
 #' @return A dataframe containing the coordinate data
 #' @export
-read_manyzancoord <- function(dir){
+read_manyzancoord <- function(dir, units){
   files <- list.files(dir, full.names=FALSE)
+  
+  if(missing(units)){
   data.list <- lapply(files, function(file){
     read_zancoord(dir, file)
-  })
+  })} else {
+  
+  data.list <- lapply(files, function(file){
+    read_zancoord(dir, file, units)
+    })}
   do.call(rbind, data.list)
 
 }

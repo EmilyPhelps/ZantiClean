@@ -4,10 +4,12 @@
 \alias{read_manyzancoord}
 \title{read_manyzancoord()}
 \usage{
-read_manyzancoord(dir)
+read_manyzancoord(dir, units)
 }
 \arguments{
 \item{dir}{Directory containing the coordinate files to be imported}
+
+\item{units}{A vector containing the unit names to extract. e.g. "Z1" "Z2" "Z3" or "101" etc.}
 }
 \value{
 A dataframe containing the coordinate data
