@@ -69,7 +69,6 @@ read_manyzancsv <- function(dir, ID){
         read_zancsv(file, ID=ID)})
   }
   
-  
   do.call(rbind, data.list)
 }
 #' read_zancoord()
@@ -87,11 +86,12 @@ read_zancoord <- function(dir, file, units){
     data <- read_csv(paste0(dir, file)) %>%
       mutate(file.timestamp=timestamp)
   } else {
-  unit <-  list.files(dir) %>% 
-    str_extract(., paste(units, collapse = "|"))
+  unit_temp <- str_extract(file, paste(units, collapse = "|"))
   data <- read_csv(paste0(dir, file)) %>%
     mutate(file.timestamp=timestamp,
-           unit=unit)}
+           unit=unit_temp)
+  }
+  
   return(data)
 }
 
