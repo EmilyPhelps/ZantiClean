@@ -4,24 +4,17 @@
 \alias{walk_dist}
 \title{walk_dist()}
 \usage{
-walk_dist(
-  tracklength = 1132,
-  xlim = c(0, 360),
-  ylim = c(0, 270),
-  start = c(180, 67.5),
-  stepsize = df_step_dist_cm
-)
+walk_dist(tracklength = 1132, start = c(180, 67.5), stepsize = df_step_dist_cm)
 }
 \arguments{
-\item{xlim}{(optional) The width of the tank used for the OFT}
-
-\item{ylim}{(optional) The length of the tank used for the OFT}
-
 \item{start}{(optional) Starting position for the swim in x,y format}
 
 \item{stepsize}{A dataframe containing steps estimated from real data.}
 
 \item{data}{A dataframe containing behavioural data from summary_behaviour()}
+
+\item{arena.df}{(optional) A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+This should include xmin, xmax, ymin, ymax for each arena.}
 }
 \value{
 An data frame containing x,y coordinates for a random swim.

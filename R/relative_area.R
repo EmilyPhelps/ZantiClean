@@ -6,16 +6,16 @@
 #'
 #' @param data A dataframe containing behavioural data from summary_behaviour()
 #' @param start (optional) Starting position for the swim in x,y format
-#' @param xlim (optional) The width of the tank used for the OFT
-#' @param ylim (optional) The length of the tank used for the OFT
+#' @param arena.df (optional) A small dataframe containing the coordinates of the arenas within the Zantiks tank/enclosure.
+#'         This should include xmin, xmax, ymin, ymax for each arena.
 #' @param stepsize A dataframe containing steps estimated from real data.
 #' @return An data frame containing x,y coordinates for a random swim.
 #' @export 
 walk_dist <- function(tracklength = 1132,
-                      xlim = c(0, 360),
-                      ylim = c(0, 270),
                       start = c(180, 67.5),  # can be randomized externally
                       stepsize = df_step_dist_cm) {
+  xlim <- c(0, unique(arena.df$xmax - arena.df$xmin))
+  ylim <- c(0, unique(arena.df$ymax - arena.df$ymin))
   
   # Preallocate storage
   max_steps <- ceiling(tracklength) * 2  # conservative buffer
@@ -146,7 +146,7 @@ estimate_RA <- function(dir, data, arena.df){
   
   #Do random swims (or walks if you have legs) and estimate area
   results_df <- map(some_tracklen, function(tlen) {
-    start_pos <- c(sample(0:360, 1), sample(0:67.5, 1))
+    start_pos <- c(sample(0:width, 1), sample(0:height, 1))
     
     walk <- walk_dist(
       start = start_pos,
@@ -156,7 +156,7 @@ estimate_RA <- function(dir, data, arena.df){
       as_tibble() %>%
       rename(X = V1, Y = V2)
     
-    area_result <- calc_area(walk)
+    area_result <- calc_area(walk, width=xlim[2], height=ylim[2]) #Using the x/ylimits estimated at the start
     
     area_value <- area_result[[1]][1]
     
