@@ -105,19 +105,18 @@ calc_area <- function(xy, arena.df, width, height){
   }
   
   if(missing(arena.df)){
-  print("Arena info missing so using explicit width and height")
-    width <- width
-    height <- height
+  warning("Arena info missing so using explicit width and height- This also drop arena and filetimestamp.Don't use if you have multiple files in one object")
     df_roundwalk <- data_frame(Move = 1:nrow(xy),
-               arena = xy$arena,
-               file.timestamp=xy$file.timestamp,
                x_round = floor(xy$X),
                y_round = floor(xy$Y)) |>  
-      group_by(arena, file.timestamp, x_round, y_round) %>%
+      group_by(x_round, y_round) %>%
       filter(!(is.na(x_round)| is.na(y_round))) %>% #Remove lines with missing coordinates. 
-      summarise(score = n()) 
+      summarise(score = n(), .groups = "drop") 
+  
+    area_cov <- round((nrow(df_roundwalk)/(width*height))*100,1)
     
-  }else{
+    return(area_cov)
+  } else {
   print("Arena info input so estimating width. Give explicit width and remove arena.df if you dont want this")
   width <- arena.df[1,]$xmax- arena.df[1,]$xmin
   height <- arena.df[1,]$ymax-arena.df[1,]$ymin
@@ -131,21 +130,25 @@ calc_area <- function(xy, arena.df, width, height){
                              x_round = floor(rel.xy$rel.X),
                              y_round = floor(rel.xy$rel.Y)) |>  
     group_by(arena, file.timestamp, x_round, y_round) |> 
-    summarise(score = n())
- 
-  }
- 
- area_cov <- df_roundwalk %>%
-    left_join(., arena.df) %>%
-    group_by(arena, file.timestamp) %>%
-    summarize(area=round((n()/(width*height))*100,1))
- 
- output <- xy %>% #This code adds in missing indiviuals and sets their area to NA
-   distinct(file.timestamp, arena) %>% 
-   right_join(area_cov, by = c("file.timestamp", "arena")) %>% 
-   complete(file.timestamp, arena)
+    summarise(score = n(), .groups = "drop") %>% 
+    group_by(arena, file.timestamp) %>% 
+    group_split()
   
- return(output)
+ area_cov <- lapply(df_roundwalk, function(z){
+    filetimestamp <- unique(z$file.timestamp)
+    arena <- unique(z$arena)
+    area<- round((nrow(z)/(width*height))*100,1)
+    tibble(file.timestamp=filetimestamp, arena=arena, area=area)
+  })
+
+ area_cov <- do.call(rbind, area_cov)
+ output <- xy %>% #This code adds in missing indiviuals and sets their area to NA
+    distinct(file.timestamp, arena) %>% 
+    right_join(area_cov, by = c("file.timestamp", "arena")) %>% 
+    complete(file.timestamp, arena)
+  
+  return(output)
+  }
 }
 #' summary_behaviour()
 #'

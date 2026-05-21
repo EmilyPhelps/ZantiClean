@@ -12,8 +12,8 @@
 #' @return An data frame containing x,y coordinates for a random swim.
 #' @export 
 walk_dist <- function(tracklength = 1132,
-                      start = c(180, 67.5),  # can be randomized externally
-                      stepsize = df_step_dist_cm) {
+                      start = c(180, 67.5),
+                      stepsize) { #This can be randomised externally
   xlim <- c(0, unique(arena.df$xmax - arena.df$xmin))
   ylim <- c(0, unique(arena.df$ymax - arena.df$ymin))
   
@@ -84,6 +84,8 @@ walk_dist <- function(tracklength = 1132,
 estimate_RA <- function(dir, data, arena.df){
   #Sample from raw files directory and read these in
   sampled <- list.files(dir) %>% sample(10,replace = FALSE)
+  xlim <- c(0, unique(arena.df$xmax - arena.df$xmin))
+  ylim <- c(0, unique(arena.df$ymax - arena.df$ymin))
   
   xy.list <- lapply(sampled, function(file){
                     read_zancoord(dir, file) %>%
@@ -156,7 +158,7 @@ estimate_RA <- function(dir, data, arena.df){
       as_tibble() %>%
       rename(X = V1, Y = V2)
     
-    area_result <- calc_area(walk, width=xlim[2], height=ylim[2]) #Using the x/ylimits estimated at the start
+    area_result <- suppressWarnings(calc_area(walk, width=xlim[2], height=ylim[2]))#Using the x/ylimits estimated at the start
     
     area_value <- area_result[[1]][1]
     
@@ -171,7 +173,7 @@ estimate_RA <- function(dir, data, arena.df){
   pred$fit <- predict(lm_sim, newdata = data, se.fit = FALSE)
   
   output <- tibble(data, predicted=pred$fit) %>%
-    mutate(relative.area=area-predicted) %>% 
-    dplyr::select(!predicted)
+    mutate(relative.area=area-predicted) #%>% 
+   # dplyr::select(!predicted)
   
   return(output)}

@@ -4,7 +4,7 @@
 \alias{walk_dist}
 \title{walk_dist()}
 \usage{
-walk_dist(tracklength = 1132, start = c(180, 67.5), stepsize = df_step_dist_cm)
+walk_dist(tracklength = 1132, start = c(180, 67.5), stepsize)
 }
 \arguments{
 \item{start}{(optional) Starting position for the swim in x,y format}
