@@ -171,7 +171,8 @@ summary_behaviour <- function(data, xy, arena.df, ID, speed, time){
     ID <- FALSE
   }
   
-  if(missing(speed)){
+  thres <- speed
+  if(missing(thres)){
       thres <- 40
       print("default speed set to 4cm/s- the threshold can be set to if animal is not likely to drift/float")
   }
