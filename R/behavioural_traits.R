@@ -22,9 +22,9 @@ stopping_duration <- function(xy, speed){
            y_move = Y - lag(Y),
            distance = sqrt(x_move^2 + y_move^2),
            time=RUNTIME- lag(RUNTIME), #Estimate the time
-           speed=distance/time,
-           # Assign group number only to rows where speed < thres
-           below_thres = speed <= thres & !is.na(speed),  # TRUE/FALSE flag
+           vel=distance/time,
+           # Assign group number only to rows where velocity < speed threshold
+           below_thres = vel <= speed & !is.na(vel),  # TRUE/FALSE flag
            zero_group = cumsum(below_thres & !lag(below_thres, default = FALSE)),  # increment at each new run start
            zero_group = ifelse(below_thres, zero_group, NA))
   
@@ -184,19 +184,19 @@ summary_behaviour <- function(data, xy, arena.df, ID, speed, time){
   
   ts <- data %>% dplyr::select(file.timestamp) %>% distinct() 
   
-  free <- freezings(xy, speed, time) %>%
-    dplyr::rename(xy.timestamp=file.timestamp) %>%
-    rowwise() %>%
-    mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
-           plus = xy.time + seconds(10),
-           minus = xy.time - seconds(10),
-           file.timestamp = as.character({
-             ts_times <- ymd_hms(ts$file.timestamp, tz = "UTC")       # Convert all ts timestamps to datetime
-             match_vals <- ts$file.timestamp[ts_times >= minus & ts_times <= plus]
-             if (length(match_vals) > 0) match_vals[1] else NA_character_})) %>% #Keep as original
-    dplyr::select(!c(minus, plus, xy.time, xy.timestamp)) #Calculate the freezing information
+  free <- freezings(xy, speed, time) 
   
-  area <- calc_area(xy, arena.df) %>%
+  area <- calc_area(xy, arena.df) 
+  
+   dis <- xy %>% 
+     group_by(arena, file.timestamp) %>% arrange(RUNTIME) %>%
+     mutate(x.dis=abs(X-lead(X)),
+            y.dis=abs(Y-lead(Y))) %>%
+     group_by(arena, file.timestamp) %>%
+     summarize(
+       dis=sum(sqrt((x.dis)^2 + (y.dis)^2), na.rm=TRUE))
+  
+  xy.behav <- left_join(dis, area) %>% left_join(., free) %>% 
     dplyr::rename(xy.timestamp=file.timestamp) %>%
     rowwise() %>%
     mutate(xy.time = ymd_hms(xy.timestamp, tz = "UTC"),  # parse as datetime
@@ -209,14 +209,7 @@ summary_behaviour <- function(data, xy, arena.df, ID, speed, time){
     dplyr::select(!c(minus, plus, xy.time, xy.timestamp))
   
   if (ID == TRUE) {
-   dis <- data %>%
-     filter(type == "D") %>%
-     group_by(file.timestamp, arena, ID, unit) %>%
-     mutate(time=max(TIME_BIN)) %>%
-     reframe(track_length=sum(total_distance),
-             velocity= sum(total_distance)/time) %>%
-     distinct()
-   
+  
    tim <- data %>%
      filter(type == "T") %>%
      pivot_longer(cols=contains("Z"), names_to="Zone", values_to = "TIZ") %>%
@@ -225,17 +218,9 @@ summary_behaviour <- function(data, xy, arena.df, ID, speed, time){
      mutate(Zone=paste0("time_", Zone)) %>%
      pivot_wider(names_from=Zone, values_from = "Time.in.Zone") %>%
      ungroup()
-
-  } else {
  
-  dis <- data %>%
-    filter(type == "D") %>%
-    group_by(file.timestamp, arena, unit) %>%
-    mutate(time=max(TIME_BIN)) %>%
-    reframe(track_length=sum(total_distance),
-              velocity= sum(total_distance)/time) %>%
-      distinct()
     
+  } else {
     
   tim <- data %>%
       filter(type == "T") %>%
